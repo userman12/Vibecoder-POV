@@ -245,6 +245,19 @@ export const NOTIFICATION_TIERS = {
 export const OBJECT_LINES = {
   vape: ['Compiling patience…', 'Inhaling the roadmap.', 'Vapour: 100%. Clarity: 0%.', 'Buffering the soul…'],
   mug: ['Coffee level: critical.', 'Caffeine deployed to production.', 'This is the fourth one. It is 1am.', 'Warm liquid, cold repository.'],
+  /** long-press variants: same objects, less restraint */
+  vapeLong: [
+    'Held it in like a production secret.',
+    'Deep breath. The repo is still broken.',
+    'Lungs at 100% capacity. Sprint at 12%.',
+    'Inhaled the entire quarter.'
+  ],
+  mugLong: [
+    'Drank it like the deadline was personal.',
+    'Half the mug, gone. Half the will, too.',
+    'That was not a sip. That was a decision.',
+    'Chugged. The heartbeat is now a build step.'
+  ],
   window: ['Outside world detected.', 'People out there are asleep. Weak.', 'The city ships nothing tonight either.', 'It has rained since the last sprint.'],
   lamp: ['Ambient lighting: negotiable.', 'Turning darkness on and off.', 'The lamp still works, at least.'],
   phone: ['Client is typing…', 'Do not open it. Open it.', 'Notification received. Boundaries deleted.'],
@@ -298,6 +311,31 @@ export const TASK_DONE_LINES = [
   { ok: '✓ complete.', tail: 'Allegedly.', next: 'Coffee levels critical. Continuing anyway.' },
   { ok: '✓ merged.', tail: 'To main. On a Friday.', next: 'Awaiting next instruction…' }
 ];
+
+/**
+ * The third possible ending for an agent run: it finished, but it broke
+ * something on the way out. Same shape as TASK_DONE_LINES so idle.onEnter
+ * can render either without branching on the text itself.
+ */
+export const TASK_FAIL_LINES = [
+  { ok: '✕ failed.', tail: 'Something that used to work does not anymore.', next: 'Rolling back. Somewhere. Probably.' },
+  { ok: '✕ aborted.', tail: 'The agent lost confidence mid-file.', next: 'Two files left in a superposition of done.' },
+  { ok: '✕ crashed.', tail: 'Stack trace points at a file nobody wrote.', next: 'Awaiting next instruction. Nervously.' },
+  { ok: '✕ reverted.', tail: 'It undid the fix and kept the bug.', next: 'The repo is now older than it was.' },
+  { ok: '✕ broke build.', tail: 'CI is red. CI has been red before.', next: 'Standing by, pretending this is fine.' }
+];
+
+/** shown as a speech bubble the moment a run turns out to have failed */
+export const TASK_FAIL_BUBBLES = [
+  'It worked on the agent\'s machine.',
+  'That was not the file I meant.',
+  'Undo. Undo. Undo.',
+  'Who approved this? Oh.',
+  'The agent is sorry. That does not help.'
+];
+
+/** probability that a run that reaches the end fails instead of succeeding */
+export const FAILURE_CHANCE = 0.28;
 
 /** phrases shown in the status line, rotated per state */
 export const STATUS_FLAVOR = {
@@ -381,8 +419,8 @@ export const TOOLTIPS = {
   'monitor-main': 'Main monitor — start / approve',
   'monitor-side': 'Second monitor — the feed',
   keyboard: 'Keyboard — Enter approves',
-  vape: 'Vape — compile patience',
-  mug: 'Coffee — critical levels',
+  vape: 'Vape — hold for a deeper drag',
+  mug: 'Coffee — hold to really commit',
   window: 'Window — the outside world',
   lamp: 'Lamp — light switch',
   phone: 'Phone — the client',

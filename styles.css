@@ -138,6 +138,22 @@ body::before {
 .hot:hover { filter: drop-shadow(0 0 10px rgba(232,199,122,.4)); }
 .hot:active { filter: drop-shadow(0 0 4px rgba(232,199,122,.25)); }
 
+/* long-press: a visible charge-up so holding feels deliberate rather than
+   like a click that didn't register. Duration matches HOLD_MS in interactions.js. */
+.hot.is-holding { animation: holdCharge .48s ease-in forwards; }
+@keyframes holdCharge {
+  from { filter: drop-shadow(0 0 4px rgba(232,199,122,.3)); }
+  to   { filter: drop-shadow(0 0 16px rgba(232,199,122,.95)) brightness(1.35); }
+}
+
+/* konami payoff: every clickable object lights up in sequence */
+.hot.egg-flash { animation: eggFlash .7s steps(3); }
+@keyframes eggFlash {
+  0%, 100% { filter: none; }
+  30%      { filter: drop-shadow(0 0 14px rgba(71,185,154,.95)) brightness(1.6); }
+  60%      { filter: drop-shadow(0 0 8px rgba(71,185,154,.6)) brightness(1.2); }
+}
+
 /* id-qualified selectors to beat `#scene text` (1,0,1), which would force
    a 5-unit stroke: too thick for lettering at this scale */
 #scene text.posterLine { font-family: var(--sans); fill: var(--cream); stroke-width: 2.4; }
@@ -181,6 +197,14 @@ body::before {
   0%   { opacity: 0;   transform: translate(0,0) scale(.4); }
   18%  { opacity: .5; }
   100% { opacity: 0;   transform: translate(-58px,-190px) scale(2.1); }
+}
+
+/* long-press cloud: rises further, spreads wider, lingers */
+.puff-big { animation: puffRiseBig 3.4s cubic-bezier(.2,.7,.3,1) forwards; }
+@keyframes puffRiseBig {
+  0%   { opacity: 0;   transform: translate(0,0) scale(.45); }
+  15%  { opacity: .62; }
+  100% { opacity: 0;   transform: translate(-96px,-268px) scale(3.1); }
 }
 
 /* ------------------------------------------------------- screens (overlay) */

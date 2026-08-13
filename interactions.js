@@ -217,7 +217,11 @@ export function createAudio({ muted = true, volume = DEFAULT_VOLUME } = {}) {
       );
     },
     sip: () => noiseHit(0.06, 0.18, 420),
+    /** long press: a longer, greedier pull */
+    sipLong: () => { noiseHit(0.075, 0.5, 380); noiseHit(0.045, 0.3, 300, 0.45); },
     puff: () => noiseHit(0.05, 0.42, 700, 0.5),
+    /** long press: a deeper drag with more room tail on it */
+    puffLong: () => { noiseHit(0.062, 0.95, 620, 0.8); noiseHit(0.03, 0.6, 900, 0.6); },
     thud: () => tone({ type: 'sine', freq: 90, to: 45, peak: 0.12, release: 0.18, wet: 0.7 }),
     /** phone: high and quick, a notification asking politely */
     buzzPhone: () => {
@@ -348,15 +352,21 @@ function createTooltip(stage, tip) {
 
 const NS = 'http://www.w3.org/2000/svg';
 
-/** angular vapor cloud above the head */
-export function puff(svg) {
+/**
+ * Angular vapor cloud above the head.
+ * @param {boolean} strong bigger, wider, longer-lived cloud — used by the
+ *        long-press variant so holding actually looks like a deeper drag
+ */
+export function puff(svg, strong = false) {
   const layer = svg.querySelector('#vapour');
   const baseX = 812;
   const baseY = 528;
-  for (let i = 0; i < 7; i++) {
+  const count = strong ? 13 : 7;
+  const scale = strong ? 1.55 : 1;
+  for (let i = 0; i < count; i++) {
     const p = document.createElementNS(NS, 'polygon');
-    const s = 12 + Math.random() * 22;
-    const ox = baseX + (Math.random() - 0.5) * 60;
+    const s = (12 + Math.random() * 22) * scale;
+    const ox = baseX + (Math.random() - 0.5) * 60 * scale;
     const oy = baseY - i * 9 + (Math.random() - 0.5) * 18;
     p.setAttribute('points', [
       `${ox},${oy - s}`,
@@ -367,12 +377,12 @@ export function puff(svg) {
     ].join(' '));
     p.setAttribute('fill', '#69716C');
     p.setAttribute('opacity', '0');
-    p.setAttribute('class', 'puff');
+    p.setAttribute('class', 'puff' + (strong ? ' puff-big' : ''));
     p.style.transformBox = 'fill-box';
     p.style.transformOrigin = '50% 100%';
-    p.style.animationDelay = (i * 90 + Math.random() * 120) + 'ms';
+    p.style.animationDelay = (i * (strong ? 70 : 90) + Math.random() * 120) + 'ms';
     layer.appendChild(p);
-    setTimeout(() => p.remove(), 3400);
+    setTimeout(() => p.remove(), strong ? 4200 : 3400);
   }
 }
 
@@ -480,20 +490,33 @@ export function initInteractions({ svg, stage, els, audio, api, say }) {
       say(pick(OBJECT_LINES.keyboard), 820, 700);
     },
 
-    vape: () => {
+    /** @param {boolean} strong set by a long press — a deeper drag */
+    vape: (strong = false) => {
       gesture(svg.querySelector('#arm-r'), 'reach-vape', 2400);
-      setTimeout(() => { puff(svg); audio.play('puff'); }, 900);
-      say(pick(OBJECT_LINES.vape), 1000, 560, 'warm');
+      setTimeout(() => {
+        puff(svg, strong);
+        audio.play(strong ? 'puffLong' : 'puff');
+      }, 900);
+      say(
+        strong ? pick(OBJECT_LINES.vapeLong) : pick(OBJECT_LINES.vape),
+        1000, 560, 'warm'
+      );
     },
 
-    mug: () => {
+    /** @param {boolean} strong set by a long press — drains the mug faster */
+    mug: (strong = false) => {
       gesture(svg.querySelector('#arm-l'), 'reach-mug', 2200);
+      const empty = coffee <= 0;
       setTimeout(() => {
-        audio.play('sip');
-        coffee = Math.max(0, coffee - 0.25);
+        audio.play(strong ? 'sipLong' : 'sip');
+        coffee = Math.max(0, coffee - (strong ? 0.5 : 0.25));
         drawCoffee();
       }, 900);
-      say(coffee <= 0.25 ? 'Coffee level: none. This is now a mug of intent.' : pick(OBJECT_LINES.mug), 560, 600, 'warm');
+      say(
+        empty ? 'Coffee level: none. This is now a mug of intent.'
+          : strong ? pick(OBJECT_LINES.mugLong) : pick(OBJECT_LINES.mug),
+        560, 600, 'warm'
+      );
     },
 
     window: () => {
@@ -545,10 +568,45 @@ export function initInteractions({ svg, stage, els, audio, api, say }) {
 
   /* ------------------------------------------------------------- event binding */
 
+  /** objects whose action takes a `strong` flag when held down */
+  const HOLDABLE = new Set(['vape', 'mug']);
+  const HOLD_MS = 480;
+
   svg.querySelectorAll('.hot').forEach((el) => {
     const id = el.id;
+    let holdTimer = null;
+    let heldFired = false;
+
+    function endHold() {
+      clearTimeout(holdTimer);
+      holdTimer = null;
+      el.classList.remove('is-holding');
+    }
+
+    if (HOLDABLE.has(id)) {
+      el.addEventListener('pointerdown', (ev) => {
+        if (ev.button !== 0 && ev.pointerType === 'mouse') return;
+        heldFired = false;
+        el.classList.add('is-holding');
+        holdTimer = setTimeout(() => {
+          heldFired = true;
+          el.classList.remove('is-holding');
+          actions[id]?.(true);
+        }, HOLD_MS);
+      });
+      // pointerup alone isn't enough: releasing outside the element, a
+      // cancelled gesture (scroll/context menu) or the pointer leaving all
+      // have to disarm the timer, or it fires after the user let go
+      ['pointerup', 'pointerleave', 'pointercancel'].forEach((type) =>
+        el.addEventListener(type, endHold)
+      );
+    }
+
     el.addEventListener('click', (ev) => {
       ev.stopPropagation();
+      // a completed long press already ran the action; swallow the click
+      // the browser sends afterwards so it doesn't fire a second time
+      if (heldFired) { heldFired = false; return; }
       actions[id]?.();
     });
     el.addEventListener('keydown', (ev) => {
@@ -579,12 +637,56 @@ export function initInteractions({ svg, stage, els, audio, api, say }) {
     api.setVolume(Number(els.vol.value) / 100);
   });
 
+  /* --------------------------------------------------------- easter egg */
+
+  const KONAMI = [
+    'ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
+    'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'
+  ];
+  let konamiPos = 0;
+
+  function konami(key) {
+    // compare case-insensitively so Caps Lock / Shift don't break the run
+    const want = KONAMI[konamiPos];
+    const got = key.length === 1 ? key.toLowerCase() : key;
+    if (got === want) {
+      konamiPos++;
+      if (konamiPos === KONAMI.length) {
+        konamiPos = 0;
+        triggerEgg();
+      }
+      return true;
+    }
+    // a wrong key restarts the sequence, but if it happens to be the first
+    // key of a fresh attempt (e.g. ↑↑↑) that attempt should still count
+    konamiPos = got === KONAMI[0] ? 1 : 0;
+    return false;
+  }
+
+  function triggerEgg() {
+    svg.querySelectorAll('.hot').forEach((el, i) => {
+      setTimeout(() => {
+        el.classList.add('egg-flash');
+        setTimeout(() => el.classList.remove('egg-flash'), 700);
+      }, i * 45);
+    });
+    audio.play('purchase');
+    say('Nice. Now get back to work.', 800, 430, 'warm');
+  }
+
   /* ----------------------------------------------------------- keyboard */
 
   document.addEventListener('keydown', (ev) => {
     if (ev.defaultPrevented) return;
     const typingInField = ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName);
     if (typingInField) return;
+
+    // the sequence is checked first, and swallows its own keys so that the
+    // trailing "a"/"b" and the arrows don't also reach the handlers below
+    if (konami(ev.key)) {
+      ev.preventDefault();
+      return;
+    }
 
     if (ev.key === 'Enter') {
       // buttons already handle Enter on their own

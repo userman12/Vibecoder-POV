@@ -7,7 +7,8 @@
 import {
   CREDITS, TIMING, TASKS, TASK_LOGS, PERMISSIONS, AGENT_LOGS, LOG_FILES,
   FEED_POSTS, STATE_LABELS, STATUS_FLAVOR, PAYMENT, SKYLINE,
-  PHONE_NOTIFICATIONS, NOTIFICATION_TIERS, IDLE_MONOLOGUE, TASK_DONE_LINES
+  PHONE_NOTIFICATIONS, NOTIFICATION_TIERS, IDLE_MONOLOGUE,
+  TASK_DONE_LINES, TASK_FAIL_LINES, TASK_FAIL_BUBBLES, FAILURE_CHANCE
 } from './data.js';
 import { StateMachine, Timers } from './stateMachine.js';
 import { createAudio, createSpeaker, initInteractions, buildWindow, puff } from './interactions.js';
@@ -274,14 +275,20 @@ function shake() {
 const sm = new StateMachine('idle', {
 
   idle: {
-    onEnter(from) {
+    onEnter(from, payload) {
       timers.clear();
       els.termTyped.textContent = '';
       audio.room(0.05);
       if (from === 'agentRunning') {
-        const outcome = pick(TASK_DONE_LINES);
-        addLine(`<span class="t-ok">${outcome.ok}</span> <span class="t-dim">${outcome.tail}</span>`);
+        const failed = !!payload?.failed;
+        const outcome = pick(failed ? TASK_FAIL_LINES : TASK_DONE_LINES);
+        addLine(`<span class="${failed ? 't-bad' : 't-ok'}">${outcome.ok}</span> <span class="t-dim">${outcome.tail}</span>`);
         addLine(`<span class="t-dim">${outcome.next}</span>`);
+        if (failed) {
+          audio.play('deny');
+          shake();
+          say(pick(TASK_FAIL_BUBBLES), 800, 430, 'alert');
+        }
       } else if (from === 'restart') {
         clearTerm();
         addLine('<span class="t-ok">session restored.</span> <span class="t-dim">the loop continues.</span>');
@@ -382,7 +389,11 @@ const sm = new StateMachine('idle', {
           renderCredits();
           sm.to('creditsDepleted');
         } else if (now >= app.runEndsAt) {
-          sm.to('idle');
+          // a run that reaches the end can still have broken something.
+          // The outcome rides along as the transition payload rather than
+          // as a new state — idle.onEnter is where the verdict is printed,
+          // and the FSM already carries payloads through to onEnter.
+          sm.to('idle', { failed: Math.random() < FAILURE_CHANCE });
         }
       });
 
