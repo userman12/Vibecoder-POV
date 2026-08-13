@@ -58,6 +58,64 @@ export const TASKS = [
   'Migrate everything to a framework released this morning.'
 ];
 
+/**
+ * Extra terminal lines specific to each task, keyed by the exact string in
+ * TASKS. Mixed into the generic AGENT_LOGS pool during agentRunning so the
+ * log feels connected to what was actually asked, not just generic noise.
+ */
+export const TASK_LOGS = {
+  'Refactor the entire auth flow before lunch.': [
+    'Auth flow refactored. Also broke logout. Investigating.',
+    'Session tokens now expire out of spite.',
+    'Lunch has been redefined as a state of mind.'
+  ],
+  'Fix one small client request.': [
+    'Scope creep detected. Scope creep ignored.',
+    'The "small" request now touches 14 files.',
+    'Estimated 10 minutes. Elapsed: 3 hours.'
+  ],
+  'Generate the landing page, backend and confidence.': [
+    'Landing page generated. Confidence still pending.',
+    'Backend feels structurally optimistic.',
+    'Confidence.js imported but never actually used.'
+  ],
+  'Deploy a feature nobody specified.': [
+    'Feature deployed. Specification retroactively invented.',
+    'Stakeholders notified. Stakeholders confused.',
+    'Shipping first, asking questions never.'
+  ],
+  'Investigate why production feels emotionally unstable.': [
+    'Production is not crashing. Production is grieving.',
+    'Root cause: everything, but specifically Tuesday.',
+    'Logs suggest the server is also tired.'
+  ],
+  'Turn vague feedback into 47 commits.': [
+    'Commit 23: "fix". Commit 24: "actually fix".',
+    'Feedback remains vague. Commits remain many.',
+    'Git blame now points entirely at 2am.'
+  ],
+  'Make the dashboard feel more premium. Somehow.': [
+    'Added a gradient. Billed as premium.',
+    '"Premium" achieved via increased padding.',
+    'Dashboard now 12% more expensive-looking.'
+  ],
+  'Rewrite the payment logic. It worked, but quietly.': [
+    'Payment logic rewritten. Now fails loudly instead.',
+    'Old bug removed. New bug hired as replacement.',
+    'Refactor complete. Nobody asked for this.'
+  ],
+  'Add dark mode to a product with no users.': [
+    'Dark mode shipped to an audience of zero.',
+    'Contrast ratio: excellent. Traffic: none.',
+    'The void now has a toggle.'
+  ],
+  'Migrate everything to a framework released this morning.': [
+    'Framework docs 404. Reading the changelog on Discord instead.',
+    'Breaking change discovered. Framework is 6 hours old.',
+    'Migration 40% complete, framework already deprecated.'
+  ]
+};
+
 /* ------------------------------------------------------- permission prompt */
 
 export const PERMISSIONS = [
@@ -146,15 +204,41 @@ export const FEED_POSTS = [
 
 /* ----------------------------------------------------- phone notifications */
 
-export const PHONE_NOTIFICATIONS = [
-  'Client: quick small change',
-  'Client: can we make it more premium?',
-  'Client: just one last thing.',
-  'Client: is it live yet?',
-  'Client: my nephew says it should be blue.',
-  'Bank: your subscription renewed.',
-  'Client: sorry, one more tiny thing.'
-];
+/**
+ * Tiered by lifetime task count (persisted, see stats.totalTasksStarted in
+ * app.js). Higher tiers unlock on top of the lower ones — they don't replace
+ * them — so early "calm" notifications keep showing up even once the
+ * relationship has clearly deteriorated.
+ */
+export const PHONE_NOTIFICATIONS = {
+  calm: [
+    'Client: quick small change',
+    'Client: can we make it more premium?',
+    'Client: just one last thing.',
+    'Client: is it live yet?',
+    'Client: my nephew says it should be blue.',
+    'Bank: your subscription renewed.',
+    'Client: sorry, one more tiny thing.'
+  ],
+  annoyed: [
+    'Client: this is the third email today.',
+    'Client: any update? Even a bad one.',
+    'Client: we discussed this on the call, remember?',
+    'Client: I forwarded this to my brother, he says it should be easy.'
+  ],
+  furious: [
+    "Client: I've called four times.",
+    "Client: my lawyer says 'unresponsive'.",
+    'Client: consider this a final notice.',
+    'Client: we need to talk. Today.'
+  ]
+};
+
+/** unlock thresholds for stats.totalTasksStarted, see PHONE_NOTIFICATIONS */
+export const NOTIFICATION_TIERS = {
+  annoyed: 5,
+  furious: 15
+};
 
 /* ---------------------------------------------- scene object one-liners */
 
@@ -188,6 +272,33 @@ export const STATE_LABELS = {
   restart: 'Motivation reinstalled'
 };
 
+/**
+ * Spontaneous lines that appear if idle lasts too long without a click —
+ * the character talking to itself. See scheduleIdleMonologue() in app.js.
+ */
+export const IDLE_MONOLOGUE = [
+  'Still here.',
+  'The task isn\'t going to write itself. Neither are you, apparently.',
+  'The cursor blinks. You blink back.',
+  'Somewhere, a deadline is quietly expiring.',
+  'This counts as thinking, technically.',
+  'The monitor is warmer than the room. Draw your own conclusions.',
+  'No task queued. No excuses queued either.',
+  'At this rate, the plant is more productive.'
+];
+
+/**
+ * Variants for the "task finished naturally" message in idle.onEnter, so
+ * the terminal doesn't repeat the exact same two lines on every long run.
+ */
+export const TASK_DONE_LINES = [
+  { ok: '✓ done.', tail: 'Nobody will review it.', next: 'Awaiting next instruction…' },
+  { ok: '✓ shipped.', tail: 'Tests were "probably fine".', next: 'The backlog remains undefeated.' },
+  { ok: '✓ closed.', tail: 'Scope quietly changed twice.', next: 'Standing by for the next fire.' },
+  { ok: '✓ complete.', tail: 'Allegedly.', next: 'Coffee levels critical. Continuing anyway.' },
+  { ok: '✓ merged.', tail: 'To main. On a Friday.', next: 'Awaiting next instruction…' }
+];
+
 /** phrases shown in the status line, rotated per state */
 export const STATUS_FLAVOR = {
   idle: ['Task queued', 'No task. No excuses.', 'The cursor is blinking at you'],
@@ -203,22 +314,56 @@ export const STATUS_FLAVOR = {
 
 /* ------------------------------------------------------- purchase screen */
 
+/**
+ * The plan itself escalates across repeated purchases in the same session
+ * (see app.purchaseCount in app.js): more asterisks, fewer promises. Price
+ * stays fixed on purpose — real subscriptions don't raise the price, they
+ * raise the fine print.
+ */
 export const PAYMENT = {
   vendor: 'TERMINALMIND',
-  plan: 'CREATOR // UNLIMITED*',
-  asterisk: '* limited',
   price: '49',
   currency: '€',
   cadence: '/ month, forever, probably',
-  bullets: [
-    '1000 credits (they burn faster now)',
-    'Priority queue during peak despair',
-    'An agent that apologises convincingly',
-    'Cancel anytime you find the button'
-  ],
   cta: 'Charge my card',
   processing: 'Charging…',
-  done: 'Payment successful. Motivation not included.'
+  done: 'Payment successful. Motivation not included.',
+  tiers: [
+    {
+      plan: 'CREATOR // UNLIMITED*',
+      asterisk: '* limited',
+      bullets: [
+        '1000 credits (they burn faster now)',
+        'Priority queue during peak despair',
+        'An agent that apologises convincingly',
+        'Cancel anytime you find the button'
+      ]
+    },
+    {
+      plan: 'CREATOR // UNLIMITED**',
+      asterisk: '** more limited than before',
+      bullets: [
+        '1000 credits (already burning)',
+        'Priority queue, if others also panic less',
+        'Cancel anytime you find the button'
+      ]
+    },
+    {
+      plan: 'CREATOR // UNLIMITED***',
+      asterisk: '*** please stop reading the fine print',
+      bullets: [
+        '1000 credits, allegedly',
+        'The button still exists. Somewhere.'
+      ]
+    },
+    {
+      plan: 'CREATOR // UNLIMITED****',
+      asterisk: '**** there is no limit, there is also no plan',
+      bullets: [
+        'You get what you paid for. Again.'
+      ]
+    }
+  ]
 };
 
 /* ------------------------------------------------------------ night skyline */

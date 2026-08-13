@@ -3,7 +3,7 @@
  * Contains no loop logic: calls the methods exposed by app.js (`api`).
  */
 
-import { OBJECT_LINES, TOOLTIPS, PHONE_NOTIFICATIONS } from './data.js';
+import { OBJECT_LINES, TOOLTIPS } from './data.js';
 
 /* =========================================================================
    AUDIO — everything synthesized with Web Audio, no external files.
@@ -375,7 +375,7 @@ export function initInteractions({ svg, stage, els, audio, api, say }) {
       const notif = svg.querySelector('#phoneNotif');
       notif.animate([{ opacity: 0 }, { opacity: 1 }, { opacity: 1 }, { opacity: 0 }], { duration: 2600, easing: 'steps(2)' });
       audio.play('buzz');
-      say(pick(PHONE_NOTIFICATIONS), 400, 720, 'alert');
+      say(api.pickPhoneNotification(), 400, 720, 'alert');
       api.clientPing();
     },
 

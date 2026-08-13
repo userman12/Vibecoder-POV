@@ -507,6 +507,7 @@ body[data-state="payment"] .hud-panel { border-left-color: var(--cream); }
 .pay-vendor { margin: 0; color: var(--red); font-size: 1.1cqw; letter-spacing: .24em; font-family: var(--mono); }
 .pay-vendor span { color: var(--dust); letter-spacing: .12em; }
 .pay-plan { margin: .5em 0 .2em; color: var(--bone); font-size: 1.5cqw; font-weight: 700; letter-spacing: .06em; }
+.pay-asterisk { margin: 0 0 .6em; color: var(--dust); font-size: .82cqw; font-style: italic; letter-spacing: .02em; }
 .pay-price { margin: .2em 0 .9em; color: var(--cream); font-family: var(--mono); }
 .pay-cur { font-size: 1.6cqw; vertical-align: super; }
 .pay-num { font-size: 4.2cqw; font-weight: 700; letter-spacing: -.02em; }

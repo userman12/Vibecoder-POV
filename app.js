@@ -5,8 +5,9 @@
  */
 
 import {
-  CREDITS, TIMING, TASKS, PERMISSIONS, AGENT_LOGS, LOG_FILES,
-  FEED_POSTS, STATE_LABELS, STATUS_FLAVOR, PAYMENT, SKYLINE
+  CREDITS, TIMING, TASKS, TASK_LOGS, PERMISSIONS, AGENT_LOGS, LOG_FILES,
+  FEED_POSTS, STATE_LABELS, STATUS_FLAVOR, PAYMENT, SKYLINE,
+  PHONE_NOTIFICATIONS, NOTIFICATION_TIERS, IDLE_MONOLOGUE, TASK_DONE_LINES
 } from './data.js';
 import { StateMachine, Timers } from './stateMachine.js';
 import { createAudio, createSpeaker, initInteractions, buildWindow, puff } from './interactions.js';
@@ -53,6 +54,32 @@ const audio = createAudio();
 const say = createSpeaker(els.stage, els.bubble, els.bubbleText);
 const timers = new Timers();
 
+/* --------------------------------------------------------------- persistence */
+
+/**
+ * The only state that survives a reload. Kept separate from `app` (which is
+ * session-only) so it's obvious at a glance what's durable. Wrapped in
+ * try/catch because localStorage can throw in private browsing / sandboxed
+ * iframes — a lost stat is harmless, a crashed boot is not.
+ */
+const STATS_KEY = 'vibecoderpov:stats';
+
+function loadStats() {
+  try {
+    const raw = localStorage.getItem(STATS_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return { totalTasksStarted: Number(parsed.totalTasksStarted) || 0 };
+  } catch {
+    return { totalTasksStarted: 0 };
+  }
+}
+
+function saveStats() {
+  try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); } catch { /* ignore */ }
+}
+
+const stats = loadStats();
+
 /* ------------------------------------------------------------------- state */
 
 const app = {
@@ -60,6 +87,7 @@ const app = {
   task: null,
   permission: null,
   taskCount: 0,
+  purchaseCount: 0, // resets on reload — the payment screen escalates per session, not for life
   clock: 60 * 60 + 7 * 60, // 01:07:00, in seconds
   runEndsAt: 0,
   progressEl: null,
@@ -211,8 +239,9 @@ const sm = new StateMachine('idle', {
       els.termTyped.textContent = '';
       audio.room(0.05);
       if (from === 'agentRunning') {
-        addLine('<span class="t-ok">✓ done.</span> <span class="t-dim">Nobody will review it.</span>', '');
-        addLine('<span class="t-dim">Awaiting next instruction…</span>');
+        const outcome = pick(TASK_DONE_LINES);
+        addLine(`<span class="t-ok">${outcome.ok}</span> <span class="t-dim">${outcome.tail}</span>`);
+        addLine(`<span class="t-dim">${outcome.next}</span>`);
       } else if (from === 'restart') {
         clearTerm();
         addLine('<span class="t-ok">session restored.</span> <span class="t-dim">the loop continues.</span>');
@@ -224,6 +253,13 @@ const sm = new StateMachine('idle', {
       app.task = null;
       setHud('idle');
       setButtons('idle');
+      scheduleIdleMonologue();
+    },
+    onExit() {
+      // idle has no timers of its own besides the monologue, but clearing
+      // here guarantees it can never fire a "Still here." bubble while the
+      // scene has already moved on to coding/permissionPrompt/etc.
+      timers.clear();
     }
   },
 
@@ -231,6 +267,8 @@ const sm = new StateMachine('idle', {
     onEnter() {
       app.task = pick(TASKS);
       app.taskCount++;
+      stats.totalTasksStarted++;
+      saveStats();
       setHud('coding');
       setButtons('coding');
       audio.room(0.06);
@@ -306,10 +344,14 @@ const sm = new StateMachine('idle', {
 
       timers.every(TIMING.logIntervalMs, () => {
         const roll = Math.random();
+        const taskLogs = TASK_LOGS[app.task];
         if (roll < 0.28) {
           addLine(`<span class="t-ok">+</span> wrote <span class="t-warn">${pick(LOG_FILES)}</span>`);
         } else if (roll < 0.38) {
           addLine(`<span class="t-warn">! </span><span class="t-dim">${pick(LOG_FILES)} conflicts with itself</span>`);
+        } else if (taskLogs && roll < 0.58) {
+          // logs tied to the actual task, not just generic noise
+          addLine(`<span class="t-dim">${pick(taskLogs)}</span>`);
         } else {
           addLine(`<span class="t-dim">${pick(AGENT_LOGS)}</span>`);
         }
@@ -380,6 +422,7 @@ const sm = new StateMachine('idle', {
   restart: {
     onEnter() {
       closePayment();
+      app.purchaseCount++; // next time the payment screen opens, the plan escalates
       app.credits = CREDITS.refill;
       renderCredits();
       setHud('restart');
@@ -426,16 +469,51 @@ function doDistraction() {
   options[i]();
 }
 
+/**
+ * If idle lasts too long without the user starting anything, the character
+ * talks to itself. Re-arms after every firing with a new random delay, and
+ * only speaks if still idle by the time the timer lands (idle.onExit clears
+ * the pending timer too, this check is the second line of defense for any
+ * race at the exact moment of a transition).
+ */
+function scheduleIdleMonologue() {
+  const delay = 20000 + Math.random() * 15000;
+  timers.after(delay, () => {
+    if (sm.state !== 'idle') return;
+    say(pick(IDLE_MONOLOGUE), 800, 440);
+    scheduleIdleMonologue();
+  });
+}
+
+/**
+ * Notification tone escalates with lifetime tasks started (persisted, see
+ * `stats`). Higher tiers are added on TOP of the calm pool, not swapped in,
+ * so a burnt-out client can still occasionally send something mundane.
+ */
+function pickPhoneNotification() {
+  const pool = [...PHONE_NOTIFICATIONS.calm];
+  if (stats.totalTasksStarted >= NOTIFICATION_TIERS.annoyed) pool.push(...PHONE_NOTIFICATIONS.annoyed);
+  if (stats.totalTasksStarted >= NOTIFICATION_TIERS.furious) pool.push(...PHONE_NOTIFICATIONS.furious);
+  return pick(pool);
+}
+
 /* --------------------------------------------------------------- payment */
 
+/**
+ * Rebuilds the payment screen's text for the current tier. Called every
+ * time the screen opens (not just once at boot) so repeat purchases in the
+ * same session show a plan with more asterisks and fewer promises.
+ */
 function buildPaymentPanel() {
-  els.payWrap.querySelector('.pay-plan').textContent = PAYMENT.plan;
+  const tier = PAYMENT.tiers[Math.min(app.purchaseCount, PAYMENT.tiers.length - 1)];
+  els.payWrap.querySelector('.pay-plan').textContent = tier.plan;
+  els.payWrap.querySelector('.pay-asterisk').textContent = tier.asterisk;
   els.payWrap.querySelector('.pay-cur').textContent = PAYMENT.currency;
   els.payWrap.querySelector('.pay-num').textContent = PAYMENT.price;
   els.payWrap.querySelector('.pay-cad').textContent = PAYMENT.cadence;
   const list = els.payWrap.querySelector('.pay-list');
   list.innerHTML = '';
-  PAYMENT.bullets.forEach((b) => {
+  tier.bullets.forEach((b) => {
     const li = document.createElement('li');
     li.textContent = b;
     list.appendChild(li);
@@ -447,6 +525,7 @@ function openPayment() {
   if (app.paymentOpen || app.credits > 0) return;
   app.paymentOpen = true;
   app.lastFocus = document.activeElement;
+  buildPaymentPanel();
   els.btnPay.disabled = false;
   els.btnPay.textContent = PAYMENT.cta;
   els.payWrap.hidden = false;
@@ -537,6 +616,8 @@ const api = {
     }
   },
 
+  pickPhoneNotification,
+
   scrollFeed
 };
 
@@ -557,8 +638,7 @@ function boot() {
   // first thing: turn the crisp polygons into hand-drawn strokes
   roughenScene(els.svg, { amp: 2.6, seg: 24 });
   buildWindow(els.svg, SKYLINE);
-  buildPaymentPanel();
-  scrollFeed();   // il feed parte da un solo post e cresce
+  scrollFeed(); // the feed starts with a single post and grows
   renderCredits();
 
   sm.subscribe(({ to }) => {
@@ -571,6 +651,12 @@ function boot() {
   addLine('<span class="t-dim">idle. The cursor is blinking at you.</span>');
   setHud('idle');
   setButtons('idle');
+  // the FSM never runs idle.onEnter for the initial state (StateMachine's
+  // constructor only sets `this.state`, it doesn't fire lifecycle hooks —
+  // that's also why setHud/setButtons above are duplicated manually), so
+  // the idle monologue has to be armed here too, or it never fires until
+  // the user completes at least one full loop.
+  scheduleIdleMonologue();
 
   // the feed lives its own life
   setInterval(() => {
