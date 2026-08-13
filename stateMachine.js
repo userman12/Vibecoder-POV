@@ -1,11 +1,11 @@
 /**
- * stateMachine.js — macchina a stati finiti minimale e verificabile.
+ * stateMachine.js — minimal, verifiable finite state machine.
  *
- * Regole:
- *  - una sola transizione valida alla volta;
- *  - ogni transizione non dichiarata viene rifiutata (e loggata in dev);
- *  - onExit dello stato precedente gira sempre prima di onEnter del nuovo;
- *  - i subscriber ricevono { from, to, payload } dopo onEnter.
+ * Rules:
+ *  - only one valid transition at a time;
+ *  - any undeclared transition is rejected (and logged in dev);
+ *  - the previous state's onExit always runs before the new state's onEnter;
+ *  - subscribers receive { from, to, payload } after onEnter.
  */
 
 export const STATES = [
@@ -20,7 +20,7 @@ export const STATES = [
   'restart'
 ];
 
-/** Grafo delle transizioni consentite. */
+/** Graph of allowed transitions. */
 export const TRANSITIONS = {
   idle: ['coding'],
   coding: ['permissionPrompt', 'idle'],
@@ -35,7 +35,7 @@ export const TRANSITIONS = {
 
 export class StateMachine {
   /**
-   * @param {string} initial stato di partenza
+   * @param {string} initial starting state
    * @param {Object<string, {onEnter?:Function, onExit?:Function}>} handlers
    */
   constructor(initial = 'idle', handlers = {}) {
@@ -48,23 +48,23 @@ export class StateMachine {
     this.history = [initial];
   }
 
-  /** true se la transizione verso `to` è dichiarata nel grafo. */
+  /** true if the transition to `to` is declared in the graph. */
   can(to) {
     return (TRANSITIONS[this.state] || []).includes(to);
   }
 
   /**
-   * Esegue la transizione. Ritorna true se avvenuta, false se rifiutata.
+   * Performs the transition. Returns true if it happened, false if rejected.
    * @param {string} to
-   * @param {*} payload passato a onExit/onEnter e ai subscriber
+   * @param {*} payload passed to onExit/onEnter and to subscribers
    */
   to(to, payload = null) {
     if (!STATES.includes(to)) {
-      console.warn(`[fsm] stato inesistente: ${to}`);
+      console.warn(`[fsm] unknown state: ${to}`);
       return false;
     }
     if (!this.can(to)) {
-      if (this.debug) console.warn(`[fsm] transizione rifiutata: ${this.state} → ${to}`);
+      if (this.debug) console.warn(`[fsm] rejected transition: ${this.state} → ${to}`);
       return false;
     }
 
@@ -80,7 +80,7 @@ export class StateMachine {
     return true;
   }
 
-  /** Forza uno stato ignorando il grafo (usato solo dal reset globale). */
+  /** Forces a state, bypassing the graph (used only by the global reset). */
   reset(to = 'idle') {
     const from = this.state;
     this.handlers[from]?.onExit?.(to, null);
@@ -103,8 +103,8 @@ export class StateMachine {
 }
 
 /**
- * Piccolo scheduler: raggruppa i timer per poterli azzerare a ogni
- * cambio di stato, evitando transizioni "fantasma" da timer orfani.
+ * Small scheduler: groups timers so they can all be cleared on every state
+ * change, preventing "ghost" transitions from orphaned timers.
  */
 export class Timers {
   constructor() {

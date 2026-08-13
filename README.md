@@ -1,144 +1,148 @@
 # Vibecoder POV
 
-Un simulatore del vero lavoro moderno: guardare una barra di progresso finché non finiscono i soldi.
+An accurate simulation of modern developer work: watching a progress bar until the money runs out.
 
-**[▶ Prova la demo dal vivo](https://userman12.github.io/Vibecoder-POV/)**
+**[▶ Try the live demo](https://userman12.github.io/Vibecoder-POV/)**
 
 ---
 
 ## About
 
-Vibecoder POV è un mini-gioco narrativo 2D, in stile tavola disegnata a mano (ispirazione: Don't
-Starve / Edward Gorey), che racconta il ciclo di vita di uno sviluppatore che ha delegato il pensiero
-a un agente AI: apri un task, firma un permesso che non hai letto, guarda una barra caricarsi mentre
-i crediti bruciano, resta senza crediti a metà frase, fissa il muro, compri altri crediti, ripeti.
-Nessun dato viene raccolto, nessun account è richiesto, nessun agente AI reale è stato consultato
-nella produzione di questo loop — solo SVG inline, CSS e JavaScript vanilla, zero dipendenze.
+Vibecoder POV is a 2D narrative mini-game, drawn in a hand-inked storybook style (inspiration:
+Don't Starve / Edward Gorey), telling the life cycle of a developer who outsourced thinking to an
+AI agent: open a task, sign a permission you didn't read, watch a bar fill while credits burn,
+run out of credits mid-thought, stare at the wall, buy more credits, repeat. No data is collected,
+no account is required, no real AI agent was consulted in the making of this loop — just inline
+SVG, CSS and vanilla JavaScript, zero dependencies.
 
-È satira, ma se ti riconosci troppo forse è documentario.
-
----
-
-Esperienza 2D interattiva e satirica: una stanza buia, di notte, un vibecoder di spalle davanti a due
-monitor, e il loop infinito di **task → permesso → agente → crediti esauriti → distrazione → acquisto → task**.
-
-Stile: comic noir/gotico disegnato a mano, alla Don't Starve. Contorni d'inchiostro spessi su ogni
-forma, palette umbra calda desaturata, tratteggio incrociato per le ombre. SVG inline, nessuna
-dipendenza esterna.
+It's satire, but if you recognize yourself too well it might be a documentary.
 
 ---
 
-## Avvio
+An interactive, satirical 2D experience: a dark room at night, a vibecoder seen from behind at
+their desk, and the endless loop of **task → permission → agent → credits depleted → distraction
+→ purchase → task**.
 
-Serve un server statico (il progetto usa moduli ES, quindi `file://` non funziona).
+Style: hand-inked comic-noir/gothic, in the vein of Don't Starve. Thick ink outlines on every
+shape, a warm desaturated umber palette, cross-hatching for shadows. Inline SVG, no external
+dependencies.
+
+---
+
+## Running it
+
+You need a static server (the project uses ES modules, so `file://` won't work).
 
 ```bash
-# una qualsiasi di queste
+# any of these will do
 python3 -m http.server 8080
 npx serve .
 php -S localhost:8080
 ```
 
-Poi apri <http://localhost:8080>. Pensato per desktop e tablet in orizzontale.
+Then open <http://localhost:8080>. Built for desktop and landscape tablets.
 
 ---
 
-## Comandi
+## Controls
 
-| Input | Effetto |
+| Input | Effect |
 | --- | --- |
-| **Start task** / clic sul monitor principale | avvia il ciclo |
-| <kbd>Enter</kbd> | azione primaria: approva il permesso, avvia un task, apre l'acquisto |
-| <kbd>Esc</kbd> | nega il permesso, chiude la schermata di pagamento |
-| <kbd>Tab</kbd> | attraversa gli oggetti interattivi della scena |
+| **Start task** / click the main monitor | starts the loop |
+| <kbd>Enter</kbd> | primary action: approve the permission, start a task, open the purchase screen |
+| <kbd>Esc</kbd> | deny the permission, close the purchase screen |
+| <kbd>Tab</kbd> | walks through the interactive objects in the scene |
 | <kbd>M</kbd> | mute / unmute |
-| clic sugli oggetti | vape, tazza, finestra, lampada, telefono, poster, router, pianta, cuffie, snack, mouse |
+| click on objects | vape, mug, window, lamp, phone, poster, router, plant, headphones, snack, mouse |
 
-Audio disattivato di default, sintetizzato con Web Audio API: nessun file esterno.
+Audio is off by default, synthesized with the Web Audio API: no external files.
 
 ---
 
-## Ciclo (60–90 s)
+## The loop (60–90 s)
 
 ```
         ┌──────────────────────────── restart ◀── payment
         ▼                                            ▲
       idle ──start task──▶ coding ──2.6s──▶ permissionPrompt
         ▲                    │                  │        │
-        │                    └──── annulla ◀────┘ deny   │ allow
+        │                    └──── cancel ◀──────┘ deny   │ allow
         │                                                ▼
-        └──── task completo ◀───────────────────── agentRunning
-                                                         │ crediti = 0
+        └──── task complete ◀──────────────────── agentRunning
+                                                         │ credits = 0
                                                          ▼
                        distraction ◀──4.2s── waiting ◀── creditsDepleted
                             │  ▲  │                          │
                             └──┘  └──────── buy credits ─────┘
 ```
 
-Transizioni dichiarate in `stateMachine.js` (`TRANSITIONS`): qualsiasi salto non presente nel grafo
-viene rifiutato, così non esistono stati incoerenti. Ogni `onEnter` azzera i timer dello stato
-precedente (`Timers.clear()`), quindi nessun timer orfano può far avanzare la scena.
+Transitions are declared in `stateMachine.js` (`TRANSITIONS`): any jump not present in the graph
+is rejected, so no inconsistent state can ever be reached. Every `onEnter` clears the previous
+state's timers (`Timers.clear()`), so no orphaned timer can advance the scene on its own.
 
-Durata di un run dell'agente: 24–34 s casuali. I crediti bruciano a 34/s su 1000 → a volte il task
-finisce in tempo (e si torna in `idle` con crediti residui), a volte l'agente si spegne a metà pensiero.
+Agent run duration: a random 24–34 s. Credits burn at 34/s out of 1000 → sometimes the task
+finishes in time (back to `idle` with credits left), sometimes the agent dies mid-thought.
 
 ---
 
-## File
+## Files
 
-| File | Contenuto |
+| File | Contents |
 | --- | --- |
-| `index.html` | scena SVG inline, overlay HTML dei due schermi, HUD, controlli, modale pagamento |
-| `styles.css` | palette, layout, stati della scena, animazioni del personaggio |
-| `data.js` | task, permission prompt, log, post del feed, notifiche, battute, palette, timing, crediti |
-| `stateMachine.js` | FSM + scheduler di timer raggruppati |
-| `interactions.js` | click/hover/tastiera, tooltip, fumetti, oggetti, audio, pioggia e vapore |
-| `roughen.js` | passata "disegnato a mano": tremola i contorni della scena con rumore deterministico |
-| `app.js` | bootstrap, rendering, crediti, loop, collegamento fra scena e FSM |
+| `index.html` | inline SVG scene, HTML overlays for the two screens, HUD, controls, payment modal |
+| `styles.css` | palette, layout, scene states, character animations |
+| `data.js` | tasks, permission prompts, logs, feed posts, notifications, one-liners, palette, timing, credits |
+| `stateMachine.js` | FSM + grouped timer scheduler |
+| `interactions.js` | click/hover/keyboard, tooltips, speech bubbles, objects, audio, rain and vapor |
+| `roughen.js` | the "hand-drawn" pass: jitters the scene's outlines with deterministic noise |
+| `app.js` | bootstrap, rendering, credits, loop, wiring between scene, state machine and interactions |
 
 ---
 
-## Come è ottenuto lo stile
+## How the style is achieved
 
-- **Contorni a mano**: `roughen.js` gira una volta al boot su tutti i 100+ poligoni della scena,
-  suddivide ogni spigolo e sposta i punti con un PRNG a seme fisso — il tremolio è deterministico
-  (stesso disegno a ogni ricarica) ma non è mai una linea perfettamente retta. Un secondo passaggio
-  fuori registro (`data-ink="2"`) ripassa le silhouette principali, come una linea disegnata due volte.
-- **Palette**: umbra calda desaturata (`#241D18`…`#6B5238`) su inchiostro quasi nero (`#0B0907`).
-  La separazione tra i piani la fa il contorno, non il contrasto dei pieni — per questo i corpi
-  possono stare più chiari del fondo senza perdere leggibilità.
-- **Ombre**: tratteggio incrociato a penna (`#hatch`, `#hatchCross`, `#hatchTight`) al posto di
-  campiture piatte, alla Edward Gorey.
-- **Luce**: fasci diagonali e aloni sfocati in `mix-blend-mode: screen` per verde monitor, rosso
-  d'allarme e crema della lampada — gli unici tre accenti di colore ammessi nella palette, perché
-  nella stanza sono l'unica luce artificiale.
-- **Animazioni**: keyframes CSS brevi e `steps()` quasi ovunque (flicker, glitch, alert, camera shake)
-  per un movimento secco e nervoso; solo il respiro e i gesti del braccio usano easing morbidi.
-- **Testo dei monitor**: HTML posizionato in percentuale sopra l'SVG e inclinato con `rotateX` /
-  `rotateY`, calcolato dal rapporto reale fra i lati del pannello disegnato (non un valore a occhio)
-  così il testo si agancia esattamente alla prospettiva del vetro.
-
----
-
-## Accessibilità
-
-- Ogni oggetto della scena è un `role="button"` con `tabindex` e `aria-label`; <kbd>Enter</kbd> e
-  <kbd>Spazio</kbd> lo attivano.
-- Gli stati non sono comunicati solo dal colore: l'HUD scrive sempre lo stato dell'agente per esteso,
-  il terminale usa marcatori testuali (`⚠`, `✓`, `✕`) e la barra crediti mostra il numero.
-- Il terminale è un `role="log"` con `aria-live="polite"`.
-- Focus sempre visibile (`:focus-visible`), con tratteggio color crema sugli oggetti della scena.
-- `prefers-reduced-motion: reduce` azzera animazioni e transizioni.
+- **Hand-drawn outlines**: `roughen.js` runs once at boot over all 100+ polygons in the scene,
+  subdividing every edge and displacing the points with a seeded PRNG — the jitter is
+  deterministic (same drawing on every reload) but no line is ever perfectly straight. A second,
+  slightly offset pass (`data-ink="2"`) retraces the main silhouettes, like a line drawn twice.
+- **Palette**: warm desaturated umber (`#241D18`…`#6B5238`) over near-black ink (`#0B0907`).
+  Separation between planes comes from the outline, not from fill contrast — which is why bodies
+  can sit lighter than the background without losing legibility.
+- **Shadows**: cross-hatched pen strokes (`#hatch`, `#hatchCross`, `#hatchTight`) instead of flat
+  fills, in the spirit of Edward Gorey.
+- **Light**: diagonal beams and blurred halos in `mix-blend-mode: screen` for monitor green, alert
+  red and lamp cream — the only three color accents allowed in the palette, because in this room
+  they're the only artificial light sources.
+- **Animation**: short CSS keyframes and `steps()` almost everywhere (flicker, glitch, alert,
+  camera shake) for a dry, nervous motion; only breathing and arm gestures use soft easing.
+- **Monitor text**: HTML positioned in percentages over the SVG and tilted with `rotateX` /
+  `rotateY`, computed from the actual ratio between the drawn panel's edges (not an eyeballed
+  value) so the text locks exactly onto the glass's perspective.
 
 ---
 
-## Estendere
+## Accessibility
 
-- Nuovi testi: tutto in `data.js` (task, prompt, log, feed, notifiche, `OBJECT_LINES`).
-- Nuovo oggetto cliccabile: aggiungi un `<g id="…" class="hot" tabindex="0" role="button">` con un
-  `<rect class="hit">` dentro, poi una voce in `TOOLTIPS` e una in `actions` dentro `initInteractions`.
-- Nuovo stato: aggiungilo a `STATES` e `TRANSITIONS`, poi crea l'handler `onEnter`/`onExit` in `app.js`.
-- Ritmo del loop: `TIMING` e `CREDITS` in `data.js`.
+- Every object in the scene is a `role="button"` with `tabindex` and `aria-label`; <kbd>Enter</kbd>
+  and <kbd>Space</kbd> activate it.
+- States are never communicated by color alone: the HUD always spells out the agent's status in
+  full text, the terminal uses text markers (`⚠`, `✓`, `✕`), and the credit bar shows the number.
+- The terminal is a `role="log"` with `aria-live="polite"`.
+- Focus is always visible (`:focus-visible`), with a cream-colored dashed outline on scene objects.
+- `prefers-reduced-motion: reduce` zeroes out animations and transitions.
 
-Nessun marchio reale è riprodotto: i nomi (`TERMINALMIND`, `PromptCloud`), la UI del feed e la
-schermata di pagamento sono invenzioni parodistiche.
+---
+
+## Extending it
+
+- New copy: everything lives in `data.js` (tasks, prompts, logs, feed, notifications,
+  `OBJECT_LINES`).
+- New clickable object: add a `<g id="…" class="hot" tabindex="0" role="button">` with a
+  `<rect class="hit">` inside, then an entry in `TOOLTIPS` and one in `actions` inside
+  `initInteractions`.
+- New state: add it to `STATES` and `TRANSITIONS`, then write the `onEnter`/`onExit` handler in
+  `app.js`.
+- Loop pacing: `TIMING` and `CREDITS` in `data.js`.
+
+No real brand is reproduced: the names (`TERMINALMIND`, `PromptCloud`), the feed UI and the
+payment screen are all parodic inventions.

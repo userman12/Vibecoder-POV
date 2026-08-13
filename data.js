@@ -1,6 +1,6 @@
 /**
- * data.js — contenuti, costanti e configurazione di "Vibe Code POV".
- * Nessuna logica: solo dati statici consumati da app.js / interactions.js.
+ * data.js — content, constants and configuration for "Vibecoder POV".
+ * No logic here: just static data consumed by app.js / interactions.js.
  */
 
 /* ---------------------------------------------------------------- palette */
@@ -17,30 +17,30 @@ export const PALETTE = {
   bone: '#D8D3C2'
 };
 
-/* ---------------------------------------------------------------- crediti */
+/* ---------------------------------------------------------------- credits */
 
 export const CREDITS = {
   max: 1000,
   start: 1000,
-  /** crediti bruciati al secondo mentre l'agente lavora */
+  /** credits burned per second while the agent is working */
   burnPerSecond: 34,
-  /** crediti "regalati" dall'acquisto fittizio */
+  /** credits "granted" by the fake purchase */
   refill: 1000,
-  /** soglia sotto la quale la barra passa in rosso */
+  /** threshold below which the bar turns red */
   lowThreshold: 0.22
 };
 
-/* ------------------------------------------------------------- tempistiche */
+/* ------------------------------------------------------------- timing */
 
 export const TIMING = {
-  codingMs: 2600,          // il vibecoder scrive il prompt
-  agentTickMs: 100,        // risoluzione del drain crediti
-  logIntervalMs: 1150,     // nuova riga di terminale
-  depletedMs: 1800,        // schermata rossa
-  waitingMs: 4200,         // fissare il vuoto
-  distractionIdleMs: 5200, // ogni tot, distrazione automatica
-  paymentMs: 2400,         // finto processing del pagamento
-  restartMs: 1300          // ricarica dopaminica
+  codingMs: 2600,          // the vibecoder is typing the prompt
+  agentTickMs: 100,        // resolution of the credit drain
+  logIntervalMs: 1150,     // new terminal line
+  depletedMs: 1800,        // red screen
+  waitingMs: 4200,         // staring into the void
+  distractionIdleMs: 5200, // periodic automatic distraction
+  paymentMs: 2400,         // fake payment processing
+  restartMs: 1300          // dopamine refill
 };
 
 /* ------------------------------------------------------------------ tasks */
@@ -91,7 +91,7 @@ export const PERMISSIONS = [
   }
 ];
 
-/* -------------------------------------------------------- log del terminale */
+/* -------------------------------------------------------- terminal logs */
 
 export const AGENT_LOGS = [
   'Analyzing codebase…',
@@ -127,7 +127,7 @@ export const LOG_FILES = [
   'scripts/deploy-and-hope.sh'
 ];
 
-/* ------------------------------------------------------------- feed sociale */
+/* ------------------------------------------------------------- social feed */
 
 export const FEED_POSTS = [
   { user: 'nightbuilder', text: 'I replaced my engineering team with seven tabs and a monthly invoice.' },
@@ -144,7 +144,7 @@ export const FEED_POSTS = [
   { user: 'quietdeploy', text: 'Nobody reviewed it, so technically nobody disagreed.' }
 ];
 
-/* ----------------------------------------------------- notifiche smartphone */
+/* ----------------------------------------------------- phone notifications */
 
 export const PHONE_NOTIFICATIONS = [
   'Client: quick small change',
@@ -156,7 +156,7 @@ export const PHONE_NOTIFICATIONS = [
   'Client: sorry, one more tiny thing.'
 ];
 
-/* ---------------------------------------------- battute degli oggetti scena */
+/* ---------------------------------------------- scene object one-liners */
 
 export const OBJECT_LINES = {
   vape: ['Compiling patience…', 'Inhaling the roadmap.', 'Vapour: 100%. Clarity: 0%.', 'Buffering the soul…'],
@@ -174,7 +174,7 @@ export const OBJECT_LINES = {
   'monitor-side': ['Doomscrolling is a form of research.']
 };
 
-/* ------------------------------------------------------------ etichette HUD */
+/* ------------------------------------------------------------ HUD labels */
 
 export const STATE_LABELS = {
   idle: 'Idle',
@@ -188,7 +188,7 @@ export const STATE_LABELS = {
   restart: 'Motivation reinstalled'
 };
 
-/** frasi mostrate nella riga di stato, a rotazione per stato */
+/** phrases shown in the status line, rotated per state */
 export const STATUS_FLAVOR = {
   idle: ['Task queued', 'No task. No excuses.', 'The cursor is blinking at you'],
   coding: ['Writing a prompt longer than the code', 'One more prompt and it will work'],
@@ -201,7 +201,7 @@ export const STATUS_FLAVOR = {
   restart: ['Back in the loop', 'New credits, same problem']
 };
 
-/* ------------------------------------------------------- schermata acquisto */
+/* ------------------------------------------------------- purchase screen */
 
 export const PAYMENT = {
   vendor: 'TERMINALMIND',
@@ -221,9 +221,9 @@ export const PAYMENT = {
   done: 'Payment successful. Motivation not included.'
 };
 
-/* ------------------------------------------------------------ skyline notte */
+/* ------------------------------------------------------------ night skyline */
 
-/** palazzi della finestra: [x, y, w, h] in coordinate viewBox */
+/** window buildings: [x, y, w, h] in viewBox coordinates */
 export const SKYLINE = [
   [86, 258, 34, 120], [120, 236, 26, 142], [146, 272, 40, 106], [186, 214, 30, 164],
   [216, 250, 22, 128], [238, 198, 38, 180], [276, 268, 28, 110], [304, 232, 34, 146],

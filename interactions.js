@@ -1,13 +1,13 @@
 /**
- * interactions.js — input, oggetti cliccabili, tooltip, fumetti, audio.
- * Non contiene la logica del loop: chiama i metodi esposti da app.js (`api`).
+ * interactions.js — input, clickable objects, tooltips, speech bubbles, audio.
+ * Contains no loop logic: calls the methods exposed by app.js (`api`).
  */
 
 import { OBJECT_LINES, TOOLTIPS, PHONE_NOTIFICATIONS } from './data.js';
 
 /* =========================================================================
-   AUDIO — tutto sintetizzato con Web Audio, nessun file esterno.
-   Parte disattivato: il contesto viene creato solo al primo "unmute".
+   AUDIO — everything synthesized with Web Audio, no external files.
+   Starts disabled: the context is only created on the first "unmute".
    ========================================================================= */
 
 export function createAudio() {
@@ -34,7 +34,7 @@ export function createAudio() {
     master.gain.value = 0.0001;
     master.connect(ctx.destination);
 
-    // pioggia: rumore bianco filtrato
+    // rain: filtered white noise
     const src = ctx.createBufferSource();
     src.buffer = noiseBuffer(3);
     src.loop = true;
@@ -49,7 +49,7 @@ export function createAudio() {
     src.connect(hp).connect(lp).connect(ambience).connect(master);
     src.start();
 
-    // ronzio dei monitor
+    // monitor hum
     const osc = ctx.createOscillator();
     osc.type = 'sine';
     osc.frequency.value = 58;
@@ -131,12 +131,12 @@ export function createAudio() {
       }
       return enabled;
     },
-    /** intensifica la pioggia quando fuori c'è tempesta */
+    /** intensifies the rain when there's a storm outside */
     weather(storm) {
       if (!ctx || !ambience) return;
       ambience.gain.linearRampToValueAtTime(storm ? 0.3 : 0.16, ctx.currentTime + 1.2);
     },
-    /** il ronzio sale mentre l'agente lavora, cala quando la stanza è morta */
+    /** the hum rises while the agent is working, fades when the room is dead */
     room(level) {
       if (!ctx || !hum) return;
       hum.gain.linearRampToValueAtTime(level, ctx.currentTime + 0.8);
@@ -146,7 +146,7 @@ export function createAudio() {
 }
 
 /* =========================================================================
-   UI di supporto: fumetto e tooltip
+   Support UI: speech bubble and tooltip
    ========================================================================= */
 
 const VB = { w: 1600, h: 1000 };
@@ -160,15 +160,15 @@ export function createSpeaker(stage, bubble, bubbleText) {
     bubbleText.textContent = text;
     bubble.className = 'bubble' + (tone ? ' is-' + tone : '');
     bubble.hidden = false;
-    // posizionamento: il fumetto punta verso il basso, quindi va sopra il target.
-    // Il clamp è calcolato dalla metà della max-width del fumetto (24cqw, quindi
-    // ±12 di margine): con un margine fisso più stretto (com'era prima, 78) gli
-    // oggetti vicino al bordo destro (es. router) finivano con il fumetto
-    // staccato di diversi punti percentuali dall'oggetto stesso.
+    // positioning: the bubble points downward, so it sits above the target.
+    // The clamp is derived from half the bubble's max-width (24cqw, so ±12
+    // of margin): with a tighter fixed margin (78, as it was before), objects
+    // near the right edge (e.g. the router) ended up with the bubble sitting
+    // several percentage points away from the object itself.
     bubble.style.left = Math.min(Math.max(p.left, 12), 88) + '%';
     bubble.style.top = Math.max(p.top - 14, 4) + '%';
     bubble.style.transform = 'translateX(-50%)';
-    // ri-triggera l'animazione d'ingresso
+    // re-trigger the entry animation
     bubble.style.animation = 'none';
     void bubble.offsetWidth;
     bubble.style.animation = '';
@@ -194,12 +194,12 @@ function createTooltip(stage, tip) {
 }
 
 /* =========================================================================
-   Effetti d'ambiente
+   Ambient effects
    ========================================================================= */
 
 const NS = 'http://www.w3.org/2000/svg';
 
-/** nuvola di vapore angolare sopra la testa */
+/** angular vapor cloud above the head */
 export function puff(svg) {
   const layer = svg.querySelector('#vapour');
   const baseX = 812;
@@ -227,7 +227,7 @@ export function puff(svg) {
   }
 }
 
-/** popola pioggia, skyline e luci della finestra */
+/** populates rain, skyline and window lights */
 export function buildWindow(svg, skyline) {
   const sky = svg.querySelector('#skyline');
   const lights = svg.querySelector('#cityLights');
@@ -275,23 +275,23 @@ export function buildWindow(svg, skyline) {
 }
 
 /* =========================================================================
-   Binding di tutte le interazioni
+   Wiring up all interactions
    ========================================================================= */
 
 /**
  * @param {Object} o
  * @param {SVGElement} o.svg
  * @param {HTMLElement} o.stage
- * @param {Object} o.els nodi UI già risolti da app.js
+ * @param {Object} o.els UI nodes already resolved by app.js
  * @param {ReturnType<createAudio>} o.audio
- * @param {Object} o.api callback verso la logica del loop
- * @param {Function} o.say fumetto
+ * @param {Object} o.api callbacks into the loop logic
+ * @param {Function} o.say speech bubble
  */
 export function initInteractions({ svg, stage, els, audio, api, say }) {
   const tip = createTooltip(stage, els.tooltip);
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-  /* ---------------------------------------------------------- gesti scena */
+  /* ---------------------------------------------------------- scene gestures */
 
   function gesture(el, cls, ms) {
     if (!el) return;
@@ -312,7 +312,7 @@ export function initInteractions({ svg, stage, els, audio, api, say }) {
     coffeeRect.setAttribute('height', Math.max(h, 0));
   }
 
-  /* --------------------------------------------------- azioni per oggetto */
+  /* --------------------------------------------------- per-object actions */
 
   const actions = {
     'monitor-main': () => api.pokeMonitor(),
@@ -394,7 +394,7 @@ export function initInteractions({ svg, stage, els, audio, api, say }) {
     mouse: () => { say(pick(OBJECT_LINES.mouse), 1060, 660); audio.play('click'); }
   };
 
-  /* ------------------------------------------------------------- binding */
+  /* ------------------------------------------------------------- event binding */
 
   svg.querySelectorAll('.hot').forEach((el) => {
     const id = el.id;
@@ -414,7 +414,7 @@ export function initInteractions({ svg, stage, els, audio, api, say }) {
     el.addEventListener('focus', () => tip.hide());
   });
 
-  /* ---------------------------------------------------------- bottoni UI */
+  /* ---------------------------------------------------------- UI buttons */
 
   els.btnStart.addEventListener('click', () => { audio.play('click'); api.startTask(); });
   els.btnBuy.addEventListener('click', () => { audio.play('click'); api.openPayment(); });
@@ -430,7 +430,7 @@ export function initInteractions({ svg, stage, els, audio, api, say }) {
       : '<span aria-hidden="true">♪</span> Sound off';
   });
 
-  /* ----------------------------------------------------------- tastiera */
+  /* ----------------------------------------------------------- keyboard */
 
   document.addEventListener('keydown', (ev) => {
     if (ev.defaultPrevented) return;
@@ -438,7 +438,7 @@ export function initInteractions({ svg, stage, els, audio, api, say }) {
     if (typingInField) return;
 
     if (ev.key === 'Enter') {
-      // i bottoni gestiscono già Enter da soli
+      // buttons already handle Enter on their own
       if (document.activeElement?.tagName === 'BUTTON') return;
       ev.preventDefault();
       api.primaryAction();
@@ -450,7 +450,7 @@ export function initInteractions({ svg, stage, els, audio, api, say }) {
     }
   });
 
-  // clic a vuoto sulla stanza: piccolo feedback, niente di più
+  // empty click on the room: small feedback, nothing more
   stage.addEventListener('click', (ev) => {
     if (ev.target.closest('.hot, button, .pay')) return;
     tip.hide();

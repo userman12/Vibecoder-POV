@@ -1,17 +1,17 @@
 /**
- * roughen.js — passata "disegnato a mano" sulla geometria della scena.
+ * roughen.js — a "hand-drawn" pass over the scene's geometry.
  *
- * Don't Starve non ha linee rette: ogni contorno trema, si ispessisce e a
- * volte è ripassato due volte. Invece di simularlo con un filtro SVG (che
- * andrebbe ricalcolato a ogni frame sugli elementi animati), qui la
- * irregolarità viene *cotta nella geometria* una volta sola al boot:
- * ogni spigolo viene suddiviso e i punti intermedi spostati con rumore.
+ * Don't Starve has no straight lines: every outline shakes, thickens, and
+ * is sometimes retraced twice. Instead of simulating that with an SVG
+ * filter (which would need recalculating every frame on animated elements),
+ * the irregularity is *baked into the geometry* once, at boot: every edge
+ * is subdivided and its intermediate points displaced with noise.
  *
- * Il rumore è deterministico (PRNG con seme): il disegno è sempre lo stesso
- * a ogni ricarica, come una tavola disegnata, non un effetto casuale.
+ * The noise is deterministic (seeded PRNG): the drawing is always the same
+ * on every reload, like a drawn plate, not a random effect.
  */
 
-/** PRNG mulberry32: piccolo, veloce, ripetibile. */
+/** mulberry32 PRNG: small, fast, repeatable. */
 function makeRng(seed) {
   let a = seed >>> 0;
   return function () {
@@ -23,7 +23,7 @@ function makeRng(seed) {
   };
 }
 
-/** somma dei caratteri: due elementi diversi ricevono semi diversi ma stabili */
+/** character sum: two different elements get different but stable seeds */
 function seedFrom(str, salt = 0) {
   let h = 2166136261 ^ salt;
   for (let i = 0; i < str.length; i++) {
@@ -43,9 +43,9 @@ function parsePoints(attr) {
 const fmt = (pts) => pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
 
 /**
- * Suddivide ogni spigolo e sposta i punti.
- * I vertici originali si muovono poco (0.35×) per non perdere gli angoli:
- * le forme restano spigolose, ma nessun lato è più perfettamente dritto.
+ * Subdivides every edge and displaces the points.
+ * Original vertices move only a little (0.35×) so corners aren't lost:
+ * shapes stay angular, but no side is ever perfectly straight anymore.
  */
 function roughPoints(pts, { closed, amp, seg, rng }) {
   if (pts.length < 2) return pts;
@@ -76,7 +76,7 @@ function roughPoints(pts, { closed, amp, seg, rng }) {
   return out;
 }
 
-/** perimetro approssimato, serve a scalare il tremolio sulla taglia dell'oggetto */
+/** approximate perimeter, used to scale the jitter to the object's size */
 function perimeter(pts, closed) {
   let p = 0;
   const last = closed ? pts.length : pts.length - 1;
@@ -93,8 +93,8 @@ const NS = 'http://www.w3.org/2000/svg';
 /**
  * @param {SVGElement} svg
  * @param {Object} [opts]
- * @param {number} [opts.amp]  tremolio massimo in unità viewBox
- * @param {number} [opts.seg]  lunghezza del segmento di suddivisione
+ * @param {number} [opts.amp]  maximum jitter in viewBox units
+ * @param {number} [opts.seg]  subdivision segment length
  */
 export function roughenScene(svg, opts = {}) {
   const baseAmp = opts.amp ?? 2.4;
@@ -104,15 +104,15 @@ export function roughenScene(svg, opts = {}) {
   const shapes = [...svg.querySelectorAll('polygon, polyline')];
 
   shapes.forEach((el, idx) => {
-    // i clip-path dentro <defs> devono restare esatti, altrimenti il tremolio
-    // ritaglia via il contenuto invece di decorarne il bordo
+    // clip-paths inside <defs> must stay exact, otherwise the jitter
+    // clips away content instead of just decorating its edge
     if (el.dataset.rough === '0' || el.classList.contains('hit') || el.closest('defs')) return;
 
     const closed = el.tagName.toLowerCase() === 'polygon';
     const pts = parsePoints(el.getAttribute('points'));
     if (pts.length < 2) return;
 
-    // oggetti piccoli tremano meno, altrimenti si sfaldano
+    // small objects jitter less, otherwise they fall apart visually
     const per = perimeter(pts, closed);
     const scale = Math.min(1, Math.max(0.42, per / 620));
     const amp = (Number(el.dataset.amp) || baseAmp) * scale;
@@ -124,7 +124,7 @@ export function roughenScene(svg, opts = {}) {
     el.setAttribute('points', fmt(roughPoints(pts, { closed, amp, seg, rng })));
     count++;
 
-    // contorno ripassato una seconda volta, leggermente fuori registro
+    // outline retraced a second time, slightly out of register
     if (el.dataset.ink === '2') {
       const ghost = document.createElementNS(NS, 'polyline');
       const rng2 = makeRng(seedFrom(key, 977));

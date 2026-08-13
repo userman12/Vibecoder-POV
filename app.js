@@ -1,7 +1,7 @@
 /**
- * app.js — bootstrap, loop principale, rendering della UI.
- * Possiede lo stato (crediti, task) e la macchina a stati; interactions.js
- * si limita a chiamare i metodi esposti in `api`.
+ * app.js — bootstrap, main loop, UI rendering.
+ * Owns the state (credits, task) and the state machine; interactions.js
+ * only calls the methods exposed on `api`.
  */
 
 import {
@@ -53,21 +53,21 @@ const audio = createAudio();
 const say = createSpeaker(els.stage, els.bubble, els.bubbleText);
 const timers = new Timers();
 
-/* ------------------------------------------------------------------- stato */
+/* ------------------------------------------------------------------- state */
 
 const app = {
   credits: CREDITS.start,
   task: null,
   permission: null,
   taskCount: 0,
-  clock: 60 * 60 + 7 * 60, // 01:07:00, in secondi
+  clock: 60 * 60 + 7 * 60, // 01:07:00, in seconds
   runEndsAt: 0,
   progressEl: null,
   paymentOpen: false,
   lastFocus: null
 };
 
-/* ------------------------------------------------------- terminale (render) */
+/* ------------------------------------------------------- terminal (render) */
 
 const MAX_LINES = 8;
 
@@ -96,9 +96,9 @@ function clearTerm() {
 }
 
 /**
- * La riga di avanzamento resta sempre in fondo e viene riscritta di continuo:
- * niente timestamp, altrimenti l'orologio del terminale sembrerebbe tornare
- * indietro ogni volta che la riga viene rispinta sotto ai nuovi log.
+ * The progress line always stays at the bottom and is rewritten continuously:
+ * no timestamp, otherwise the terminal clock would appear to run backwards
+ * every time the line gets pushed back down under new log entries.
  */
 function addProgressLine() {
   const el = document.createElement('div');
@@ -115,7 +115,7 @@ function bar(ratio) {
   return `<span class="term-bar">${'█'.repeat(on)}${'░'.repeat(total - on)}</span> ${String(Math.round(ratio * 100)).padStart(3)}%`;
 }
 
-/* ---------------------------------------------------------------- crediti */
+/* ---------------------------------------------------------------- credits */
 
 function renderCredits() {
   const ratio = clamp(app.credits / CREDITS.max, 0, 1);
@@ -128,9 +128,9 @@ function renderCredits() {
 /* --------------------------------------------------------------- feed side */
 
 /**
- * Il feed cresce un post alla volta. Quando il pannello è pieno riparte da
- * zero con una lista nuova: stessi contenuti, ordine rimescolato, così il
- * ciclo successivo non ripete la sequenza appena vista.
+ * The feed grows one post at a time. When the panel is full it starts over
+ * with a fresh list: same content, shuffled order, so the next cycle
+ * doesn't repeat the sequence just seen.
  */
 let feedQueue = [];
 let feedPos = 0;
@@ -153,13 +153,13 @@ function buildPost(post) {
   return el;
 }
 
-/** aggiunge un post; se non ci sta più, svuota e ricomincia da una lista nuova */
+/** adds a post; if it no longer fits, clears the panel and starts a fresh list */
 function scrollFeed() {
   if (feedPos >= feedQueue.length) newFeedList();
   els.feed.appendChild(buildPost(feedQueue[feedPos++]));
 
-  // misura reale invece di un numero fisso di post: i testi hanno lunghezze
-  // diverse, quindi il pannello si riempie con 3, 4 o 5 post a seconda dei casi
+  // real measurement instead of a fixed post count: texts have different
+  // lengths, so the panel fills up with 3, 4 or 5 posts depending on the case
   if (els.feed.scrollHeight > els.feed.clientHeight) {
     els.feed.innerHTML = '';
     newFeedList();
@@ -183,7 +183,7 @@ function setButtons(state) {
   els.hint.hidden = state !== 'permissionPrompt';
 }
 
-/* ----------------------------------------------------------------- effetti */
+/* ----------------------------------------------------------------- effects */
 
 function flash(warm = false) {
   els.flash.classList.toggle('warm', warm);
@@ -200,7 +200,7 @@ function shake() {
 }
 
 /* =========================================================================
-   MACCHINA A STATI
+   STATE MACHINE
    ========================================================================= */
 
 const sm = new StateMachine('idle', {
@@ -237,7 +237,7 @@ const sm = new StateMachine('idle', {
       clearTerm();
       addLine(`<span class="t-dim">new task ·</span> ${app.task}`);
 
-      // digitazione del prompt, carattere per carattere
+      // typing the prompt, character by character
       const text = app.task.toLowerCase();
       let i = 0;
       const step = Math.max(24, Math.floor(TIMING.codingMs / (text.length + 6)));
@@ -313,7 +313,7 @@ const sm = new StateMachine('idle', {
         } else {
           addLine(`<span class="t-dim">${pick(AGENT_LOGS)}</span>`);
         }
-        // il progress deve restare in fondo
+        // the progress line must stay at the bottom
         if (app.progressEl) els.term.appendChild(app.progressEl);
         audio.play('key');
       });
@@ -394,7 +394,7 @@ const sm = new StateMachine('idle', {
   }
 });
 
-/* -------------------------------------------------- distrazioni automatiche */
+/* -------------------------------------------------- automatic distractions */
 
 let lastDistraction = -1;
 
@@ -426,7 +426,7 @@ function doDistraction() {
   options[i]();
 }
 
-/* --------------------------------------------------------------- pagamento */
+/* --------------------------------------------------------------- payment */
 
 function buildPaymentPanel() {
   els.payWrap.querySelector('.pay-plan').textContent = PAYMENT.plan;
@@ -485,7 +485,7 @@ const api = {
 
   awaitingPermission() { return sm.state === 'permissionPrompt'; },
 
-  /** clic sul monitor principale: fa la cosa sensata per lo stato corrente */
+  /** click on the main monitor: does the sensible thing for the current state */
   pokeMonitor() {
     switch (sm.state) {
       case 'idle': api.startTask(); break;
@@ -506,7 +506,7 @@ const api = {
     sm.to('payment');
   },
 
-  /** Enter globale */
+  /** global Enter */
   primaryAction() {
     if (app.paymentOpen) { api.confirmPayment(); return; }
     switch (sm.state) {
@@ -519,7 +519,7 @@ const api = {
     }
   },
 
-  /** Esc globale */
+  /** global Esc */
   secondaryAction() {
     if (app.paymentOpen && sm.state !== 'payment') { closePayment(); return; }
     if (sm.state === 'permissionPrompt') api.deny();
@@ -554,7 +554,7 @@ const interactionsApi = initInteractions({
 function boot() {
   document.body.dataset.weather = 'calm';
   document.body.dataset.lamp = 'on';
-  // prima cosa: trasforma i poligoni netti in tratto disegnato a mano
+  // first thing: turn the crisp polygons into hand-drawn strokes
   roughenScene(els.svg, { amp: 2.6, seg: 24 });
   buildWindow(els.svg, SKYLINE);
   buildPaymentPanel();
@@ -572,12 +572,12 @@ function boot() {
   setHud('idle');
   setButtons('idle');
 
-  // il feed vive di vita propria
+  // the feed lives its own life
   setInterval(() => {
     if (['idle', 'waiting', 'distraction'].includes(sm.state)) scrollFeed();
   }, 7000);
 
-  // notifica del cliente a intervalli irregolari
+  // client notification at irregular intervals
   setInterval(() => {
     if (sm.state === 'agentRunning' && Math.random() < 0.5) {
       const notif = els.svg.querySelector('#phoneNotif');
@@ -589,5 +589,5 @@ function boot() {
 
 boot();
 
-// utile in console per ispezionare il loop
+// handy in the console to inspect the loop
 window.vibe = { sm, app, api };

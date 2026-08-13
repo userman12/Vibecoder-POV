@@ -15,15 +15,15 @@
 <main id="app">
   <div class="stage" id="stage">
 
-    <!-- ============================== SCENA ============================== -->
+    <!-- ============================== SCENE ============================== -->
     <svg id="scene" viewBox="0 0 1600 1000" role="img"
          aria-label="A dark room at night. A vibecoder seen from behind, sitting at a desk in front of two glowing monitors.">
 
       <defs>
-        <!-- Scala tonale per profondità, ora in umbra calda: in Don't Starve la
-             separazione la fa il contorno d'inchiostro, quindi i corpi possono
-             salire di valore. parete < pavimento < sedia < scrivania < oggetti;
-             il personaggio resta la massa più scura, ritagliata nella luce. -->
+        <!-- Tonal scale for depth, now in warm umber: in Don't Starve the
+             ink outline does the separating, so bodies can sit lighter.
+             wall < floor < chair < desk < objects; the character stays the
+             darkest mass, cut out against the light. -->
         <linearGradient id="gWall" x1="0" y1="0" x2="0.3" y2="1">
           <stop offset="0" stop-color="#241D18" />
           <stop offset="0.55" stop-color="#1A1512" />
@@ -65,8 +65,8 @@
           <stop offset="1" stop-color="#47B99A" stop-opacity="0" />
         </radialGradient>
 
-        <!-- Tratteggio alla Gorey: le ombre non sono campiture piatte ma penna
-             ripassata. Due angoli sovrapposti danno il classico cross-hatch. -->
+        <!-- Gorey-style hatching: shadows aren't flat fills but retraced
+             pen strokes. Two overlapping angles give the classic cross-hatch. -->
         <pattern id="hatch" width="13" height="13" patternUnits="userSpaceOnUse" patternTransform="rotate(38)">
           <line x1="0" y1="0" x2="0" y2="13" stroke="#0B0907" stroke-width="2.2" stroke-opacity="0.75" />
           <line x1="6.5" y1="1" x2="6.5" y2="12" stroke="#0B0907" stroke-width="1.1" stroke-opacity="0.4" />
@@ -109,14 +109,14 @@
         </clipPath>
       </defs>
 
-      <!-- ---------------------------------------------------------- stanza -->
+      <!-- ---------------------------------------------------------- room -->
       <g id="walls" filter="url(#rough)">
         <rect x="-10" y="-10" width="1180" height="720" fill="url(#gWall)" />
         <polygon points="1150,-10 1610,-10 1610,866 1150,702" fill="url(#gWallR)" />
         <polygon points="-10,698 1150,698 1610,860 1610,1010 -10,1010" fill="url(#gFloor)" />
       </g>
 
-      <!-- piani d'ombra geometrici sulle pareti -->
+      <!-- geometric shadow planes on the walls -->
       <g id="wallShades" aria-hidden="true">
         <polygon class="no-ink" points="0,0 470,0 250,700 0,700" fill="#000" opacity="0.3" />
         <polygon class="no-ink" points="0,0 430,0 226,700 0,700" fill="url(#hatch)" opacity="0.5" />
@@ -124,13 +124,13 @@
         <polygon class="no-ink" points="1150,0 1600,0 1600,300 1150,210" fill="#000" opacity="0.26" />
         <polygon class="no-ink" points="1150,120 1600,180 1600,420 1150,330" fill="url(#hatch)" opacity="0.35" />
         <polygon class="no-ink" points="0,0 300,0 120,700 0,700" fill="url(#hatchTight)" opacity="0.2" />
-        <!-- spigoli architettonici, tirati a inchiostro -->
+        <!-- architectural edges, drawn in ink -->
         <line x1="1150" y1="0" x2="1150" y2="700" stroke="#0B0907" stroke-width="6" />
         <line x1="0" y1="700" x2="1150" y2="700" stroke="#0B0907" stroke-width="7" />
         <line x1="1150" y1="700" x2="1600" y2="860" stroke="#0B0907" stroke-width="7" />
       </g>
 
-      <!-- --------------------------------------------------------- finestra -->
+      <!-- --------------------------------------------------------- window -->
       <g id="window" class="hot" tabindex="0" role="button"
          aria-label="Window with a night skyline. Changes the weather outside.">
         <polygon data-ink="2" points="66,100 442,92 448,432 62,424" fill="#151110" stroke="#0B0907" stroke-width="3" />
@@ -142,23 +142,23 @@
           <polygon class="no-ink" id="lightning" points="86,110 428,110 428,414 84,408" fill="#D9CDB4" opacity="0" />
           <polygon points="84,352 430,346 430,416 84,412" fill="#100C0A" opacity="0.72" />
         </g>
-        <!-- montanti -->
+        <!-- mullions -->
         <polygon points="248,110 268,110 266,414 246,414" fill="#120F0D" stroke="#0B0907" stroke-width="2" />
         <polygon points="84,252 428,246 428,266 84,272" fill="#120F0D" stroke="#0B0907" stroke-width="2" />
         <polygon points="66,100 442,92 448,432 62,424" fill="none" stroke="#0B0907" stroke-width="7" />
         <rect class="hit" x="60" y="88" width="392" height="350" />
       </g>
 
-      <!-- fascio di luce dalla finestra -->
+      <!-- light beam from the window -->
       <polygon class="no-ink" id="windowBeam" points="90,414 424,408 980,1000 210,1000" fill="url(#gBeam)" opacity="0.5" />
 
       <!-- ----------------------------------------------------------- poster -->
-      <!-- il poster motivazionale d'ordinanza: vetta innevata e slogan da hustle -->
+      <!-- the obligatory motivational poster: snow-capped peak and hustle slogan -->
       <g id="poster" class="hot" tabindex="0" role="button"
          aria-label="Motivational poster: Rise and grind. Sleep is a config option.">
         <polygon points="640,32 800,26 806,190 636,186" fill="#191411" stroke="#0B0907" stroke-width="3.5" />
         <polygon points="652,44 790,39 794,178 648,175" fill="#151110" />
-        <!-- montagna con vetta innevata -->
+        <!-- mountain with a snow-capped peak -->
         <polygon points="658,126 698,70 720,100 744,62 784,126" fill="#4A5334" />
         <polygon points="744,62 756,79 731,79" fill="#D9CDB4" opacity="0.6" />
         <polygon points="698,70 708,84 688,84" fill="#D9CDB4" opacity="0.42" />
@@ -168,27 +168,27 @@
         <rect class="hit" x="634" y="24" width="176" height="170" />
       </g>
 
-      <!-- ---------------------------------------------------------- scrivania -->
+      <!-- ---------------------------------------------------------- desk -->
       <g id="desk">
         <polygon data-ink="2" points="360,600 1250,600 1330,845 230,845" fill="url(#gDesk)" />
         <polygon points="230,845 1330,845 1338,910 222,910" fill="#1B1613" />
         <polygon class="no-ink" points="360,600 1250,600 1330,845 230,845" fill="url(#hatchCross)" opacity="0.22" />
         <line x1="360" y1="600" x2="1250" y2="600" stroke="#0B0907" stroke-width="3" />
-        <!-- spigolo frontale: la linea più chiara della scena dopo le luci -->
+        <!-- front edge: the lightest line in the scene after the lights -->
         <line x1="230" y1="845" x2="1330" y2="845" stroke="#0B0907" stroke-width="5" />
         <line x1="230" y1="845" x2="222" y2="910" stroke="#0B0907" stroke-width="4" />
         <line x1="1330" y1="845" x2="1338" y2="910" stroke="#0B0907" stroke-width="4" />
-        <!-- ombra proiettata dai monitor -->
+        <!-- shadow cast by the monitors -->
         <polygon class="no-ink" points="470,600 1120,600 1180,760 430,760" fill="#000" opacity="0.22" />
         <polygon class="no-ink" points="480,604 1110,604 1168,752 442,752" fill="url(#hatch)" opacity="0.45" />
-        <!-- pozza di luce verde sul piano -->
+        <!-- pool of green light on the desktop -->
         <polygon class="no-ink" id="deskSpill" points="500,600 1120,600 1200,800 420,800" fill="url(#gSpill)" opacity="0.42" />
       </g>
 
-      <!-- alone dei monitor sulla parete -->
+      <!-- monitor glow on the wall -->
       <ellipse id="wallGlow" cx="795" cy="360" rx="420" ry="230" fill="#47B99A" opacity="0.09" filter="url(#blurBig)" />
 
-      <!-- ------------------------------------------------- monitor principale -->
+      <!-- ------------------------------------------------- main monitor -->
       <g id="monitor-main" class="hot" tabindex="0" role="button"
          aria-label="Main monitor. Starts a task and shows the agent terminal.">
         <polygon points="770,494 830,494 840,588 760,588" fill="#2C231C" stroke="#0B0907" stroke-width="2.5" />
@@ -201,7 +201,7 @@
       </g>
       <rect id="screenBleed" x="546" y="186" width="498" height="312" fill="#47B99A" opacity="0.2" filter="url(#blurMid)" pointer-events="none" />
 
-      <!-- --------------------------------------------------- secondo monitor -->
+      <!-- --------------------------------------------------- second monitor -->
       <g id="monitor-side" class="hot" tabindex="0" role="button"
          aria-label="Second monitor showing a social feed.">
         <polygon points="1210,506 1256,510 1250,600 1196,598" fill="#2C231C" stroke="#0B0907" stroke-width="2.5" />
@@ -213,7 +213,7 @@
       <polygon class="no-ink" id="sideBleed" points="1078,268 1400,240 1400,520 1078,492" fill="#47B99A" opacity="0.14"
                filter="url(#blurMid)" pointer-events="none" />
 
-      <!-- ----------------------------------------------------------- lampada -->
+      <!-- ----------------------------------------------------------- lamp -->
       <g id="lamp" class="hot" tabindex="0" role="button" aria-label="Desk lamp. Toggles the warm light.">
         <polygon class="no-ink" points="284,628 414,628 438,650 300,650" fill="#000" opacity="0.45" />
         <polygon points="286,606 400,606 412,634 296,634" fill="#221B16" stroke="#0B0907" stroke-width="2.5" />
@@ -225,10 +225,10 @@
       </g>
       <polygon class="no-ink" id="lampCone" points="452,452 486,466 700,900 300,880" fill="url(#gLamp)" pointer-events="none" />
 
-      <!-- ------------------------------------------------------ oggetti scrivania -->
+      <!-- ------------------------------------------------------ desk objects -->
       <g id="deskItems">
 
-        <!-- tastiera -->
+        <!-- keyboard -->
         <g id="keyboard" class="hot" tabindex="0" role="button" aria-label="Keyboard. Enter approves the prompt.">
           <polygon class="no-ink" points="614,746 1024,746 1042,764 598,764" fill="#000" opacity="0.5" />
           <polygon data-ink="2" points="640,688 992,688 1020,750 610,750" fill="#1C1713" stroke="#0B0907" stroke-width="2.5" />
@@ -255,7 +255,7 @@
           <rect class="hit" x="1030" y="698" width="56" height="56" />
         </g>
 
-        <!-- tazza -->
+        <!-- mug -->
         <g id="mug" class="hot" tabindex="0" role="button" aria-label="Coffee mug.">
           <polygon class="no-ink" points="472,700 542,700 568,716 486,716" fill="#000" opacity="0.55" />
           <polygon points="540,656 566,664 562,690 538,684" fill="none" stroke="#0B0907" stroke-width="6" />
@@ -268,15 +268,14 @@
         </g>
 
         <!-- snack -->
-        <!-- sacchetto di patatine: sommità crimpata a zigzag, corpo a cuscino,
-             etichetta ed effetto foil lucido — così si legge da subito come
-             merenda e non come un blocco generico -->
+        <!-- chip bag: zigzag-crimped top, pillowy body, label and shiny foil
+             sheen — so it reads immediately as a snack, not a generic block -->
         <g id="snack" class="hot" tabindex="0" role="button" aria-label="Snack bag.">
           <polygon class="no-ink" points="466,832 540,826 550,842 460,848" fill="#000" opacity="0.5" />
           <polygon points="472,838 464,806 468,776 478,760 486,768 494,758 502,766 510,756 518,764 526,754 536,772 542,806 534,838"
                     fill="#241D18" stroke="#0B0907" stroke-width="2.5" />
-          <!-- etichetta con l'icona della patatina: è lei a far leggere
-               "sacchetto di patatine" invece di "blocco generico" -->
+          <!-- label with the chip icon on it: this is what makes it read as
+               "bag of chips" instead of "generic block" -->
           <polygon points="482,798 524,793 530,824 488,828" fill="#E8C77A" opacity="0.92" />
           <polygon points="491,812 495,804 501,809 506,801 512,807 518,803 522,811 519,818 513,814 508,820 503,813 497,819 493,816"
                     fill="#C98A3E" opacity="0.95" />
@@ -285,9 +284,9 @@
             <circle cx="512" cy="812" r="1.1" />
             <circle cx="506" cy="815" r="1" />
           </g>
-          <!-- riflesso del foil -->
+          <!-- foil sheen -->
           <line class="no-ink" x1="476" y1="772" x2="494" y2="832" stroke="#D9CDB4" stroke-width="2.5" stroke-opacity="0.3" />
-          <!-- briciole sul piano -->
+          <!-- crumbs on the desk -->
           <g class="no-ink" fill="#3A2C1E" opacity="0.7">
             <circle cx="550" cy="844" r="2.4" />
             <circle cx="558" cy="840" r="1.7" />
@@ -297,9 +296,9 @@
         </g>
 
         <!-- smartphone -->
-        <!-- corpo rettangolare, schermo davvero acceso: griglia di app minimali
-             disegnate in coordinate locali dentro un <g> ruotato, cosi restano
-             quadrate invece di seguire lo scorcio del corpo esterno -->
+        <!-- rectangular body, screen genuinely lit: a grid of minimal app icons
+             drawn in local coordinates inside a rotated <g>, so they stay
+             square instead of following the outer body's foreshortening -->
         <g id="phone" class="hot" tabindex="0" role="button" aria-label="Smartphone, screen on. Shows client notifications.">
           <polygon class="no-ink" points="352,842 420,832 430,846 360,858" fill="#000" opacity="0.5" />
           <polygon points="346,725 409,716 426,839 363,848" fill="#1C1713" stroke="#0B0907" stroke-width="2.5" />
@@ -323,7 +322,7 @@
           <rect class="hit" x="338" y="708" width="94" height="146" />
         </g>
 
-        <!-- cuffie -->
+        <!-- headphones -->
         <g id="headphones" class="hot" tabindex="0" role="button" aria-label="Headphones.">
           <polygon class="no-ink" points="1098,760 1240,764 1250,778 1096,774" fill="#000" opacity="0.5" />
           <polyline points="1112,742 1118,700 1150,684 1196,686 1224,706 1226,744"
@@ -342,16 +341,17 @@
           <rect class="hit" x="1144" y="768" width="120" height="62" />
         </g>
 
-        <!-- cavi sulla scrivania -->
-        <!-- il cavo che scendeva dal monitor principale è stato tolto: passava
-             a ridosso della testa e sembrava uscire dal viso del personaggio -->
+        <!-- cables on the desk -->
+        <!-- the cable that used to run down from the main monitor was removed:
+             it passed right by the head and looked like it came out of the
+             character's face -->
         <g id="cables" pointer-events="none" fill="none" stroke="#0B0907" stroke-width="6" stroke-linejoin="miter">
           <polyline points="1224,600 1210,640 1300,672 1340,720 1330,846" />
           <polyline points="360,634 340,676 250,700 236,844" />
         </g>
       </g>
 
-      <!-- ------------------------------------------------------------- pianta -->
+      <!-- ------------------------------------------------------------- plant -->
       <g id="plant" class="hot" tabindex="0" role="button" aria-label="Plant in the corner.">
         <polygon class="no-ink" points="1396,830 1470,830 1486,846 1394,846" fill="#000" opacity="0.5" />
         <polygon data-ink="2" points="1392,748 1478,748 1462,838 1408,838" fill="#241D18" stroke="#0B0907" stroke-width="2.5" />
@@ -366,9 +366,9 @@
         <rect class="hit" x="1362" y="640" width="150" height="204" />
       </g>
 
-      <!-- ------------------------------------------------------ router / ciabatta -->
-      <!-- solo il router: la ciabatta è stata tolta, il segnale wifi è
-           stampato sul pannello frontale accanto alle spie, non sospeso sopra -->
+      <!-- ------------------------------------------------------ router / power strip -->
+      <!-- just the router: the power strip was removed, the wifi signal is
+           printed on the front panel next to the LEDs, not floating above it -->
       <g id="router" class="hot" tabindex="0" role="button" aria-label="Router. Wifi signal, mostly theoretical.">
         <polygon class="no-ink" points="1414,930 1566,916 1578,930 1420,944" fill="#000" opacity="0.5" />
         <polygon points="1408,880 1560,868 1568,922 1414,936" fill="#1E1814" stroke="#0B0907" stroke-width="2.5" />
@@ -385,71 +385,72 @@
         <rect class="hit" x="1398" y="858" width="186" height="94" />
       </g>
 
-      <!-- ------------------------------------------------------------ sedia -->
-      <!-- Sedia da ufficio riconoscibile: poggiatesta staccato dallo schienale
-           (il vuoto tra i due è il segnale di lettura più forte), braccioli a L
-           e base a stella con rotelle, che spuntano ai lati del personaggio.
-           La sedia è disegnata dopo la scrivania perché sta fra noi e il piano. -->
-      <!-- Grigio ardesia in tutta la sedia, deliberatamente lontano dal
-           marrone di scrivania/pavimento: prima usava le stesse umbre del
-           legno intorno e i pezzi si confondevano con gli oggetti sul piano.
-           Tre valori per la profondità (chiaro sui pad, medio su schienale/
-           poggiatesta, scuro su base e montanti) più il nero d'inchiostro. -->
+      <!-- ------------------------------------------------------------ chair -->
+      <!-- Recognizable office chair: headrest detached from the backrest
+           (the gap between the two is the strongest reading cue), L-shaped
+           armrests and a star base with casters, poking out at the sides of
+           the character. The chair is drawn after the desk because it sits
+           between us and the desktop. -->
+      <!-- Slate gray across the whole chair, deliberately far from the
+           desk/floor brown: it used to use the same wood umbers around it
+           and the pieces blended into the objects on the desk. Three values
+           for depth (light on the pads, mid on backrest/headrest, dark on
+           base and uprights) plus the black ink. -->
       <g id="chair" aria-hidden="true">
-        <!-- base a stella: le razze visibili oltre la sagoma del personaggio -->
+        <!-- star base: the spokes visible beyond the character's silhouette -->
         <polygon points="704,948 566,992 530,984 692,930" fill="#23282A" stroke="#0B0907" stroke-width="2.5" />
         <polygon points="896,948 1034,992 1070,984 908,930" fill="#23282A" stroke="#0B0907" stroke-width="2.5" />
         <polygon points="762,952 742,1006 706,1006 728,948" fill="#1C2224" stroke="#0B0907" stroke-width="2.5" />
         <polygon points="838,952 858,1006 894,1006 872,948" fill="#1C2224" stroke="#0B0907" stroke-width="2.5" />
         <ellipse cx="524" cy="988" rx="17" ry="13" fill="#181D1F" stroke="#0B0907" stroke-width="2.5" />
         <ellipse cx="1076" cy="988" rx="17" ry="13" fill="#181D1F" stroke="#0B0907" stroke-width="2.5" />
-        <!-- colonna a gas -->
+        <!-- gas cylinder -->
         <polygon points="772,880 828,880 832,952 768,952" fill="#181D1F" stroke="#0B0907" stroke-width="2.5" />
         <polygon points="766,876 834,876 836,892 764,892" fill="#33393C" stroke="#0B0907" stroke-width="2.5" />
 
-        <!-- schienale -->
+        <!-- backrest -->
         <polygon data-ink="2" points="560,1010 582,872 614,834 986,834 1018,872 1040,1010" fill="#2C3234" stroke="#0B0907" stroke-width="3.5" />
         <polyline points="600,894 1000,894" fill="none" stroke="#0B0907" stroke-width="2.5" opacity="0.75" />
         <polyline points="592,946 1008,946" fill="none" stroke="#0B0907" stroke-width="2.5" opacity="0.75" />
 
-        <!-- montanti fra schienale e poggiatesta, stesso tono dei braccioli:
-             il vuoto qui è ciò che rende la sagoma leggibile come sedia da
-             ufficio, non un'altra ombra marrone accanto alla scrivania -->
+        <!-- uprights between backrest and headrest, same tone as the armrests:
+             the gap here is what makes the silhouette read as an office
+             chair, not just another brown shadow next to the desk -->
         <polygon points="654,834 688,834 690,806 656,806" fill="#3E464A" stroke="#0B0907" stroke-width="2.5" />
         <polygon points="912,834 946,834 944,806 910,806" fill="#3E464A" stroke="#0B0907" stroke-width="2.5" />
 
-        <!-- poggiatesta -->
+        <!-- headrest -->
         <polygon data-ink="2" points="632,750 968,746 984,806 616,810" fill="#3E464A" stroke="#0B0907" stroke-width="3.5" />
 
-        <!-- braccioli a L: pad orizzontale + montante verticale -->
+        <!-- L-shaped armrests: horizontal pad + vertical upright -->
         <polygon points="496,866 580,854 586,890 502,904" fill="#3E464A" stroke="#0B0907" stroke-width="2.5" />
         <polygon points="536,898 570,893 578,950 544,956" fill="#23282A" stroke="#0B0907" stroke-width="2.5" />
         <polygon points="1020,854 1104,866 1098,904 1014,890" fill="#3E464A" stroke="#0B0907" stroke-width="2.5" />
         <polygon points="1030,893 1064,898 1056,956 1022,950" fill="#23282A" stroke="#0B0907" stroke-width="2.5" />
       </g>
 
-      <!-- ------------------------------------------------------- personaggio -->
-      <!-- abbassato di 22 unità per fare posto ai ciuffi senza coprire il terminale -->
+      <!-- ------------------------------------------------------- character -->
+      <!-- lowered by 22 units to make room for the hair spikes without covering the terminal -->
       <g id="character" transform="translate(0,22)">
-        <!-- braccio sinistro -->
+        <!-- left arm -->
         <g id="arm-l" class="arm">
           <polygon points="676,732 646,690 618,668 592,690 616,730 656,772" fill="#131010" stroke="#0B0907" stroke-width="3" />
           <polygon id="hand-l" points="596,676 634,662 646,684 612,700" fill="#241D18" stroke="#0B0907" stroke-width="2.5" />
         </g>
-        <!-- braccio destro -->
+        <!-- right arm -->
         <g id="arm-r" class="arm">
           <polygon points="924,732 954,690 982,668 1008,690 984,730 944,772" fill="#131010" stroke="#0B0907" stroke-width="3" />
           <polygon id="hand-r" points="964,662 1002,676 986,700 952,684" fill="#241D18" stroke="#0B0907" stroke-width="2.5" />
         </g>
 
-        <!-- busto / felpa -->
+        <!-- torso / hoodie -->
         <g id="torso">
           <polygon data-ink="2" points="632,1010 648,880 664,780 686,716 712,676 748,652 800,644 852,652 888,676 914,716 936,780 952,880 968,1010"
                    fill="#131010" stroke="#0B0907" stroke-width="3.5" />
-          <!-- cappuccio -->
+          <!-- hood -->
           <polygon points="726,660 762,636 800,628 838,636 874,660 856,700 800,684 744,700"
                    fill="#0F0C0A" stroke="#0B0907" stroke-width="3" />
-          <!-- pieghe -->
+          <!-- folds -->
           <g stroke="#0B0907" stroke-width="3" fill="none">
             <polyline points="700,1006 712,880 726,790" />
             <polyline points="900,1006 888,880 874,790" />
@@ -458,45 +459,45 @@
           <polygon class="no-ink" points="632,1010 968,1010 952,880 648,880" fill="#000" opacity="0.3" />
         </g>
 
-        <!-- testa -->
+        <!-- head -->
         <g id="head">
           <polygon data-ink="2" points="744,648 736,596 742,552 756,524 778,506 800,500 826,506 848,522 860,548 866,596 856,648"
                    fill="#171310" stroke="#0B0907" stroke-width="3.5" />
-          <!-- capelli spigolosi -->
+          <!-- spiky hair -->
           <polygon points="736,592 738,552 750,436 768,538 784,444 800,530 816,430 832,534 848,450 860,544 870,486 872,592 830,582 800,590 764,582"
                    fill="#0D0A08" stroke="#0B0907" stroke-width="2.5" />
-          <!-- orecchio -->
+          <!-- ear -->
           <polygon points="740,596 730,600 730,620 742,622" fill="#171310" stroke="#0B0907" stroke-width="2" />
           <polygon points="860,596 870,600 870,620 858,622" fill="#171310" stroke="#0B0907" stroke-width="2" />
         </g>
 
-        <!-- rim light dei monitor: le due polyline sulla sommità della testa
-             sono state tolte (erano lette come una riga verde disegnata sopra
-             i capelli invece che come luce). Resta solo il bordo su spalle
-             e cappuccio, dove il controluce dei monitor è più plausibile. -->
+        <!-- monitor rim light: the two polylines along the top of the head
+             were removed (they read as a green line drawn on top of the hair
+             instead of as light). Only the outline on shoulders and hood
+             remains, where the monitors' backlight is more plausible. -->
         <g id="rimlight" pointer-events="none" fill="none" stroke-linejoin="miter">
           <polyline class="no-ink" points="712,676 748,652 800,644 852,652 888,676" stroke="#47B99A" stroke-width="4" stroke-opacity="0.55" />
           <polyline class="no-ink" points="686,716 712,676" stroke="#47B99A" stroke-width="3" stroke-opacity="0.3" />
           <polyline class="no-ink" points="914,716 888,676" stroke="#47B99A" stroke-width="3" stroke-opacity="0.3" />
         </g>
-        <!-- rimlightWarm è un fratello di #head, non un figlio: la riga che
-             correva lungo il lato della testa restava ferma quando la testa
-             ruotava con la sua animazione (headIdle), leggendosi come un
-             segno fisso invece che come luce sul personaggio. Tolta. -->
+        <!-- rimlightWarm is a sibling of #head, not a child: the line that
+             ran along the side of the head stayed still while the head
+             rotated with its animation (headIdle), reading as a fixed mark
+             instead of light on the character. Removed. -->
         <g id="rimlightWarm" pointer-events="none" fill="none">
           <polyline class="no-ink" points="936,780 914,716" stroke="#E8C77A" stroke-width="3" stroke-opacity="0.3" />
         </g>
       </g>
 
-      <!-- vapore -->
+      <!-- vapor -->
       <g id="vapour" pointer-events="none"></g>
 
-      <!-- fasci diagonali e grana -->
+      <!-- diagonal beams and grain -->
       <polygon class="no-ink" id="beamDiag" points="1100,0 1360,0 640,1000 260,1000" fill="#47B99A" opacity="0.03" pointer-events="none" />
       <rect id="grainLayer" x="0" y="0" width="1600" height="1000" filter="url(#grain)" opacity="0.09" pointer-events="none" />
     </svg>
 
-    <!-- ====================== SCHERMO PRINCIPALE (HTML) ==================== -->
+    <!-- ====================== MAIN SCREEN (HTML) ==================== -->
     <div class="screen screen-main" id="screenMain">
       <div class="scr-top">
         <span class="scr-brand">TERMINALMIND</span>
@@ -533,7 +534,7 @@
       </div>
     </div>
 
-    <!-- ======================== SECONDO SCHERMO ============================ -->
+    <!-- ======================== SECOND SCREEN ============================ -->
     <div class="screen screen-side" id="screenSide">
       <div class="feed-top"><span>THE FEED</span><span class="feed-live">live</span></div>
       <div class="feed" id="feed"></div>
@@ -558,7 +559,7 @@
 
     <p class="hint" id="hint" hidden>Press <kbd>Enter</kbd> to allow</p>
 
-    <!-- ============================= CONTROLLI ============================ -->
+    <!-- ============================= CONTROLS ============================ -->
     <div class="controls">
       <button class="btn btn-go" id="btnStart" type="button">Start task</button>
       <button class="btn btn-buy" id="btnBuy" type="button" hidden>Buy credits</button>
@@ -567,13 +568,13 @@
       </button>
     </div>
 
-    <!-- fumetto / tooltip / flash -->
+    <!-- speech bubble / tooltip / flash -->
     <div class="bubble" id="bubble" role="status" aria-live="polite" hidden><span id="bubbleText"></span></div>
     <div class="tip" id="tooltip" hidden></div>
     <div class="flash" id="flash" aria-hidden="true"></div>
     <div class="vignette" aria-hidden="true"></div>
 
-    <!-- ============================== PAGAMENTO =========================== -->
+    <!-- ============================== PAYMENT =========================== -->
     <div class="pay-wrap" id="payWrap" hidden>
       <div class="pay" role="dialog" aria-modal="true" aria-labelledby="payTitle">
         <p class="pay-vendor" id="payTitle">TERMINALMIND <span>// billing</span></p>
