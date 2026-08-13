@@ -40,6 +40,11 @@ const els = {
   btnStart: $('#btnStart'),
   btnBuy: $('#btnBuy'),
   btnMute: $('#btnMute'),
+  btnMuteLabel: $('#btnMuteLabel'),
+  sound: $('.sound'),
+  vol: $('#vol'),
+  intro: $('#intro'),
+  btnEnter: $('#btnEnter'),
   btnAllow: $('#btnAllow'),
   btnDeny: $('#btnDeny'),
   btnPay: $('#btnPay'),
@@ -50,7 +55,6 @@ const els = {
   tooltip: $('#tooltip')
 };
 
-const audio = createAudio();
 const say = createSpeaker(els.stage, els.bubble, els.bubbleText);
 const timers = new Timers();
 
@@ -79,6 +83,42 @@ function saveStats() {
 }
 
 const stats = loadStats();
+
+/**
+ * Audio preferences. Separate key from stats: these are settings the user
+ * chose, not a record of what they did, and they're read at a different
+ * moment (before the audio module exists rather than during the loop).
+ *
+ * Note that `muted: false` does NOT mean sound plays immediately on load —
+ * browsers require a user gesture before an AudioContext can start. The
+ * intro card's "enter" click is that gesture; see enterScene() below.
+ */
+const PREFS_KEY = 'vibecoderpov:prefs';
+
+function loadPrefs() {
+  const fallback = { muted: true, volume: 0.6 };
+  try {
+    const raw = localStorage.getItem(PREFS_KEY);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    const vol = Number(parsed.volume);
+    return {
+      muted: parsed.muted !== false,
+      volume: Number.isFinite(vol) ? Math.min(Math.max(vol, 0), 1) : fallback.volume
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function savePrefs() {
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch { /* ignore */ }
+}
+
+const prefs = loadPrefs();
+
+// created after prefs so the persisted mute/volume are its starting values
+const audio = createAudio({ muted: prefs.muted, volume: prefs.volume });
 
 /* ------------------------------------------------------------------- state */
 
@@ -281,8 +321,12 @@ const sm = new StateMachine('idle', {
       const step = Math.max(24, Math.floor(TIMING.codingMs / (text.length + 6)));
       timers.every(step, () => {
         if (i >= text.length) return;
-        els.termTyped.textContent += text[i++];
-        if (i % 3 === 0) audio.play('key');
+        const ch = text[i++];
+        els.termTyped.textContent += ch;
+        // a click on (almost) every character instead of every third one:
+        // the gaps are what make it read as typing rather than as a metronome,
+        // so spaces stay silent and a few keystrokes are randomly dropped
+        if (ch !== ' ' && Math.random() > 0.12) audio.play('type');
       });
       timers.after(TIMING.codingMs, () => sm.to('permissionPrompt'));
     },
@@ -539,6 +583,48 @@ function closePayment() {
   if (app.lastFocus && document.contains(app.lastFocus)) app.lastFocus.focus({ preventScroll: true });
 }
 
+/* ----------------------------------------------------------------- sound UI */
+
+/** mirrors the audio module's state onto the controls, and persists it */
+function syncSound(on) {
+  els.btnMute.setAttribute('aria-pressed', String(!on));
+  els.btnMuteLabel.textContent = on ? 'Sound on' : 'Sound off';
+  els.sound.dataset.on = String(on);
+  els.vol.disabled = !on; // collapsed by CSS; also keep it out of the tab order
+  prefs.muted = !on;
+  savePrefs();
+}
+
+function setVolume(v) {
+  prefs.volume = audio.setVolume(v);
+  savePrefs();
+}
+
+/* --------------------------------------------------------------------- intro */
+
+let entered = false;
+
+/**
+ * Dismisses the title card. This runs inside a user gesture, which is the
+ * only moment a browser will let an AudioContext start — so a persisted
+ * "sound on" preference is honoured here rather than at load time.
+ */
+function enterScene() {
+  if (entered) return;
+  entered = true;
+
+  if (!prefs.muted) audio.resume();
+  audio.play('click');
+
+  els.intro.classList.add('is-leaving');
+  setTimeout(() => { els.intro.hidden = true; }, 460);
+
+  // only start counting idle time once the scene is actually visible,
+  // otherwise the monologue can fire behind the title card
+  scheduleIdleMonologue();
+  els.btnStart.focus({ preventScroll: true });
+}
+
 /* ---------------------------------------------------------------- API loop */
 
 const api = {
@@ -618,6 +704,9 @@ const api = {
 
   pickPhoneNotification,
 
+  syncSound,
+  setVolume,
+
   scrollFeed
 };
 
@@ -651,12 +740,29 @@ function boot() {
   addLine('<span class="t-dim">idle. The cursor is blinking at you.</span>');
   setHud('idle');
   setButtons('idle');
-  // the FSM never runs idle.onEnter for the initial state (StateMachine's
-  // constructor only sets `this.state`, it doesn't fire lifecycle hooks —
-  // that's also why setHud/setButtons above are duplicated manually), so
-  // the idle monologue has to be armed here too, or it never fires until
-  // the user completes at least one full loop.
-  scheduleIdleMonologue();
+
+  // reflect the persisted audio preferences on the controls. The sound
+  // itself can't start yet (no user gesture); enterScene() does that.
+  // Note the FSM never runs idle.onEnter for the initial state — its
+  // constructor only assigns `this.state` without firing lifecycle hooks,
+  // which is also why setHud/setButtons above are duplicated manually —
+  // so the idle monologue is armed from enterScene() instead.
+  els.vol.value = String(Math.round(prefs.volume * 100));
+  syncSound(!prefs.muted);
+
+  els.btnEnter.addEventListener('click', enterScene);
+  els.intro.addEventListener('click', enterScene);
+  // Capture phase on purpose: interactions.js registers its global keydown
+  // handler before boot() runs, so on Enter it would otherwise fire first
+  // and start a task behind the still-visible title card.
+  document.addEventListener('keydown', (ev) => {
+    if (entered) return;
+    if (ev.key === 'Tab') return; // let focus move without dismissing
+    ev.preventDefault();
+    ev.stopPropagation();
+    enterScene();
+  }, true);
+  els.btnEnter.focus({ preventScroll: true });
 
   // the feed lives its own life
   setInterval(() => {
@@ -668,7 +774,7 @@ function boot() {
     if (sm.state === 'agentRunning' && Math.random() < 0.5) {
       const notif = els.svg.querySelector('#phoneNotif');
       notif.animate([{ opacity: 0 }, { opacity: 1 }, { opacity: 0 }], { duration: 2400, easing: 'steps(2)' });
-      audio.play('buzz');
+      audio.play('buzzPhone');
     }
   }, 12000);
 }

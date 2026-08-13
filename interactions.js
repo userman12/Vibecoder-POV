@@ -7,21 +7,65 @@ import { OBJECT_LINES, TOOLTIPS } from './data.js';
 
 /* =========================================================================
    AUDIO — everything synthesized with Web Audio, no external files.
-   Starts disabled: the context is only created on the first "unmute".
+
+   Signal flow:
+     sources ─┬─────────────────────────► master ─► destination
+              └─► reverbSend ─► convolver ─► reverbReturn ─┘
+
+   A send/return reverb (rather than putting everything through the
+   convolver) keeps transients like key clicks sharp while still placing
+   them in the same room as the rain and the hum — otherwise the sounds
+   read as separately "pasted on" rather than sharing a space.
+
+   The context is only created on the first unmute/resume, because
+   browsers refuse to start an AudioContext without a user gesture.
    ========================================================================= */
 
-export function createAudio() {
+/** default target for master gain when unmuted (0..1) */
+const DEFAULT_VOLUME = 0.6;
+
+export function createAudio({ muted = true, volume = DEFAULT_VOLUME } = {}) {
   let ctx = null;
   let master = null;
-  let ambience = null;
-  let hum = null;
-  let enabled = false;
+  let ambience = null;   // rain
+  let city = null;       // distant traffic
+  let hum = null;        // monitor hum
+  let reverbSend = null;
+  let enabled = !muted;  // desired state; the context may not exist yet
+  let level = clamp01(volume);
+  let hornTimer = null;
+
+  function clamp01(v) {
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.min(Math.max(n, 0), 1) : DEFAULT_VOLUME;
+  }
+
+  /** exponentialRampToValueAtTime cannot reach 0, so floor every target */
+  const audible = (v) => Math.max(v, 0.0001);
 
   function noiseBuffer(seconds = 2) {
-    const len = ctx.sampleRate * seconds;
+    const len = Math.floor(ctx.sampleRate * seconds);
     const buf = ctx.createBuffer(1, len, ctx.sampleRate);
     const d = buf.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    return buf;
+  }
+
+  /**
+   * Synthetic impulse response: white noise under an exponential decay
+   * envelope. Crude compared to a sampled room, but it costs nothing to
+   * ship and gives the scene a small, closed, slightly dead space —
+   * which is exactly the room being depicted.
+   */
+  function impulseBuffer(seconds = 1.1, decay = 3.4) {
+    const len = Math.floor(ctx.sampleRate * seconds);
+    const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = buf.getChannelData(ch);
+      for (let i = 0; i < len; i++) {
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+      }
+    }
     return buf;
   }
 
@@ -30,11 +74,21 @@ export function createAudio() {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
     ctx = new AC();
+
     master = ctx.createGain();
     master.gain.value = 0.0001;
     master.connect(ctx.destination);
 
-    // rain: filtered white noise
+    // --- reverb send/return ---
+    const convolver = ctx.createConvolver();
+    convolver.buffer = impulseBuffer();
+    const reverbReturn = ctx.createGain();
+    reverbReturn.gain.value = 0.9;
+    reverbSend = ctx.createGain();
+    reverbSend.gain.value = 1;
+    reverbSend.connect(convolver).connect(reverbReturn).connect(master);
+
+    // --- rain: filtered white noise ---
     const src = ctx.createBufferSource();
     src.buffer = noiseBuffer(3);
     src.loop = true;
@@ -46,10 +100,30 @@ export function createAudio() {
     hp.frequency.value = 260;
     ambience = ctx.createGain();
     ambience.gain.value = 0.16;
-    src.connect(hp).connect(lp).connect(ambience).connect(master);
+    src.connect(hp).connect(lp).connect(ambience);
+    ambience.connect(master);
+    ambience.connect(reverbSend);
     src.start();
 
-    // monitor hum
+    // --- distant city: same noise trick, but only the low rumble survives
+    //     the filter, which reads as traffic several streets away ---
+    const citySrc = ctx.createBufferSource();
+    citySrc.buffer = noiseBuffer(4);
+    citySrc.loop = true;
+    const cityLp = ctx.createBiquadFilter();
+    cityLp.type = 'lowpass';
+    cityLp.frequency.value = 190;
+    const cityHp = ctx.createBiquadFilter();
+    cityHp.type = 'highpass';
+    cityHp.frequency.value = 45;
+    city = ctx.createGain();
+    city.gain.value = 0.1;
+    citySrc.connect(cityHp).connect(cityLp).connect(city);
+    city.connect(master);
+    city.connect(reverbSend);
+    citySrc.start();
+
+    // --- monitor hum ---
     const osc = ctx.createOscillator();
     osc.type = 'sine';
     osc.frequency.value = 58;
@@ -57,6 +131,21 @@ export function createAudio() {
     hum.gain.value = 0.05;
     osc.connect(hum).connect(master);
     osc.start();
+
+    scheduleHorn();
+  }
+
+  /** a lone car horn every 18-45s, so the city never sounds like a loop */
+  function scheduleHorn() {
+    clearTimeout(hornTimer);
+    hornTimer = setTimeout(() => {
+      if (enabled && ctx) {
+        const base = 210 + Math.random() * 90;
+        tone({ type: 'sawtooth', freq: base, peak: 0.022, attack: 0.05, release: 0.5, wet: 1.4 });
+        tone({ type: 'sawtooth', freq: base * 1.5, peak: 0.014, attack: 0.05, release: 0.45, wet: 1.4 });
+      }
+      scheduleHorn();
+    }, 18000 + Math.random() * 27000);
   }
 
   function env(node, peak, attack, release) {
@@ -67,7 +156,8 @@ export function createAudio() {
     node.gain.exponentialRampToValueAtTime(0.0001, t + attack + release);
   }
 
-  function tone({ type = 'square', freq = 440, to = null, peak = 0.12, attack = 0.005, release = 0.12, delay = 0 }) {
+  /** `wet` scales how much of this sound is fed to the reverb send */
+  function tone({ type = 'square', freq = 440, to = null, peak = 0.12, attack = 0.005, release = 0.12, delay = 0, wet = 0.35 }) {
     if (!enabled || !ctx) return;
     const t0 = ctx.currentTime + delay;
     const osc = ctx.createOscillator();
@@ -78,12 +168,18 @@ export function createAudio() {
     g.gain.setValueAtTime(0.0001, t0);
     g.gain.exponentialRampToValueAtTime(peak, t0 + attack);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + attack + release);
-    osc.connect(g).connect(master);
+    osc.connect(g);
+    g.connect(master);
+    if (wet > 0 && reverbSend) {
+      const send = ctx.createGain();
+      send.gain.value = wet;
+      g.connect(send).connect(reverbSend);
+    }
     osc.start(t0);
     osc.stop(t0 + attack + release + 0.05);
   }
 
-  function noiseHit(peak = 0.1, dur = 0.06, freq = 1800) {
+  function noiseHit(peak = 0.1, dur = 0.06, freq = 1800, wet = 0.3) {
     if (!enabled || !ctx) return;
     const src = ctx.createBufferSource();
     src.buffer = noiseBuffer(0.2);
@@ -91,7 +187,13 @@ export function createAudio() {
     bp.type = 'bandpass';
     bp.frequency.value = freq;
     const g = ctx.createGain();
-    src.connect(bp).connect(g).connect(master);
+    src.connect(bp).connect(g);
+    g.connect(master);
+    if (wet > 0 && reverbSend) {
+      const send = ctx.createGain();
+      send.gain.value = wet;
+      g.connect(send).connect(reverbSend);
+    }
     env(g, peak, 0.004, dur);
     src.start();
     src.stop(ctx.currentTime + dur + 0.1);
@@ -99,48 +201,95 @@ export function createAudio() {
 
   const sfx = {
     key: () => noiseHit(0.07, 0.035, 2400 + Math.random() * 900),
+    /** softer, jittered variant used for continuous typing during `coding` */
+    type: () => noiseHit(0.035 + Math.random() * 0.03, 0.022 + Math.random() * 0.018, 2100 + Math.random() * 1500, 0.18),
     click: () => noiseHit(0.05, 0.05, 1200),
     beep: () => { tone({ freq: 880, peak: 0.1, release: 0.09 }); tone({ freq: 1320, peak: 0.08, release: 0.1, delay: 0.11 }); },
     allow: () => { tone({ type: 'triangle', freq: 520, to: 900, peak: 0.11, release: 0.16 }); },
     deny: () => { tone({ type: 'sawtooth', freq: 300, to: 120, peak: 0.09, release: 0.2 }); },
     error: () => {
-      tone({ type: 'sawtooth', freq: 220, to: 60, peak: 0.16, attack: 0.01, release: 0.55 });
-      tone({ type: 'square', freq: 150, to: 44, peak: 0.1, attack: 0.01, release: 0.6, delay: 0.05 });
+      tone({ type: 'sawtooth', freq: 220, to: 60, peak: 0.16, attack: 0.01, release: 0.55, wet: 0.6 });
+      tone({ type: 'square', freq: 150, to: 44, peak: 0.1, attack: 0.01, release: 0.6, delay: 0.05, wet: 0.6 });
     },
     purchase: () => {
       [523, 659, 784, 1047].forEach((f, i) =>
-        tone({ type: 'triangle', freq: f, peak: 0.1, attack: 0.008, release: 0.18, delay: i * 0.075 })
+        tone({ type: 'triangle', freq: f, peak: 0.1, attack: 0.008, release: 0.18, delay: i * 0.075, wet: 0.5 })
       );
     },
     sip: () => noiseHit(0.06, 0.18, 420),
-    puff: () => noiseHit(0.05, 0.42, 700),
-    thud: () => tone({ type: 'sine', freq: 90, to: 45, peak: 0.12, release: 0.18 }),
-    buzz: () => { tone({ type: 'square', freq: 130, peak: 0.06, release: 0.08 }); tone({ type: 'square', freq: 130, peak: 0.06, release: 0.08, delay: 0.14 }); }
+    puff: () => noiseHit(0.05, 0.42, 700, 0.5),
+    thud: () => tone({ type: 'sine', freq: 90, to: 45, peak: 0.12, release: 0.18, wet: 0.7 }),
+    /** phone: high and quick, a notification asking politely */
+    buzzPhone: () => {
+      tone({ type: 'square', freq: 320, peak: 0.045, attack: 0.004, release: 0.05 });
+      tone({ type: 'square', freq: 320, peak: 0.045, attack: 0.004, release: 0.05, delay: 0.1 });
+    },
+    /** router: low and dirty, mains hum with a fault in it */
+    buzzRouter: () => {
+      tone({ type: 'sawtooth', freq: 88, to: 74, peak: 0.075, attack: 0.008, release: 0.22, wet: 0.55 });
+      tone({ type: 'square', freq: 45, peak: 0.05, attack: 0.01, release: 0.3, delay: 0.03, wet: 0.55 });
+    }
   };
+
+  function applyLevel(ramp = 0.6) {
+    if (!ctx || !master) return;
+    master.gain.cancelScheduledValues(ctx.currentTime);
+    master.gain.exponentialRampToValueAtTime(
+      audible(enabled ? level : 0),
+      ctx.currentTime + ramp
+    );
+  }
 
   return {
     get enabled() { return enabled; },
+    get volume() { return level; },
+
+    /**
+     * Starts (or resumes) the context. Must be called from inside a user
+     * gesture handler — that's the whole reason the intro card exists.
+     * Safe to call repeatedly.
+     */
+    resume() {
+      if (!enabled) return false;
+      boot();
+      if (ctx?.state === 'suspended') ctx.resume();
+      applyLevel(0.9);
+      return !!ctx;
+    },
+
     toggle() {
       enabled = !enabled;
       if (enabled) {
         boot();
         if (ctx?.state === 'suspended') ctx.resume();
-        master?.gain.exponentialRampToValueAtTime(0.6, ctx.currentTime + 0.6);
-      } else if (master) {
-        master.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25);
+        applyLevel(0.6);
+      } else {
+        applyLevel(0.25);
       }
       return enabled;
     },
+
+    /** 0..1; takes effect immediately if the sound is already on */
+    setVolume(v) {
+      level = clamp01(v);
+      applyLevel(0.12);
+      return level;
+    },
+
     /** intensifies the rain when there's a storm outside */
     weather(storm) {
       if (!ctx || !ambience) return;
       ambience.gain.linearRampToValueAtTime(storm ? 0.3 : 0.16, ctx.currentTime + 1.2);
+      // traffic thins out in bad weather
+      if (city) city.gain.linearRampToValueAtTime(storm ? 0.055 : 0.1, ctx.currentTime + 1.2);
     },
+
     /** the hum rises while the agent is working, fades when the room is dead */
-    room(level) {
+    room(lvl) {
       if (!ctx || !hum) return;
-      hum.gain.linearRampToValueAtTime(level, ctx.currentTime + 0.8);
+      hum.gain.linearRampToValueAtTime(lvl, ctx.currentTime + 0.8);
     },
+
     play(name) { sfx[name]?.(); }
   };
 }
@@ -374,7 +523,7 @@ export function initInteractions({ svg, stage, els, audio, api, say }) {
       gesture(svg.querySelector('#arm-l'), 'reach-phone', 2100);
       const notif = svg.querySelector('#phoneNotif');
       notif.animate([{ opacity: 0 }, { opacity: 1 }, { opacity: 1 }, { opacity: 0 }], { duration: 2600, easing: 'steps(2)' });
-      audio.play('buzz');
+      audio.play('buzzPhone');
       say(api.pickPhoneNotification(), 400, 720, 'alert');
       api.clientPing();
     },
@@ -384,7 +533,7 @@ export function initInteractions({ svg, stage, els, audio, api, say }) {
     router: () => {
       stage.classList.add('glitch');
       setTimeout(() => stage.classList.remove('glitch'), 700);
-      audio.play('buzz');
+      audio.play('buzzRouter');
       say(pick(OBJECT_LINES.router), 1480, 862, 'alert');
     },
 
@@ -423,11 +572,11 @@ export function initInteractions({ svg, stage, els, audio, api, say }) {
   els.btnPay.addEventListener('click', () => api.confirmPayment());
 
   els.btnMute.addEventListener('click', () => {
-    const on = audio.toggle();
-    els.btnMute.setAttribute('aria-pressed', String(!on));
-    els.btnMute.innerHTML = on
-      ? '<span aria-hidden="true">♪</span> Sound on'
-      : '<span aria-hidden="true">♪</span> Sound off';
+    api.syncSound(audio.toggle());
+  });
+
+  els.vol.addEventListener('input', () => {
+    api.setVolume(Number(els.vol.value) / 100);
   });
 
   /* ----------------------------------------------------------- keyboard */

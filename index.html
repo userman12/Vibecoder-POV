@@ -563,9 +563,13 @@
     <div class="controls">
       <button class="btn btn-go" id="btnStart" type="button">Start task</button>
       <button class="btn btn-buy" id="btnBuy" type="button" hidden>Buy credits</button>
-      <button class="btn btn-ghost" id="btnMute" type="button" aria-pressed="true">
-        <span aria-hidden="true">♪</span> Sound off
-      </button>
+      <div class="sound">
+        <button class="btn btn-ghost" id="btnMute" type="button" aria-pressed="true">
+          <span aria-hidden="true">♪</span> <span id="btnMuteLabel">Sound off</span>
+        </button>
+        <input class="vol" id="vol" type="range" min="0" max="100" step="1" value="60"
+               aria-label="Volume" title="Volume" />
+      </div>
     </div>
 
     <!-- speech bubble / tooltip / flash -->
@@ -573,6 +577,22 @@
     <div class="tip" id="tooltip" hidden></div>
     <div class="flash" id="flash" aria-hidden="true"></div>
     <div class="vignette" aria-hidden="true"></div>
+
+    <!-- ============================== INTRO ============================= -->
+    <!-- Title card over the scene. Beyond framing the piece for anyone
+         arriving from a shared link, its dismiss click doubles as the user
+         gesture browsers require before an AudioContext may start — which
+         is what lets a persisted "sound on" preference actually take
+         effect on load instead of silently staying muted. -->
+    <div class="intro" id="intro">
+      <div class="intro-card">
+        <p class="intro-kicker">A 2D loop about</p>
+        <h1 class="intro-title">VIBECODER<span>POV</span></h1>
+        <p class="intro-sub">Tasks you didn't read. Credits you already spent.</p>
+        <button class="intro-cta" id="btnEnter" type="button">Enter the room</button>
+        <p class="intro-fine">Sound is part of it. Headphones recommended.</p>
+      </div>
+    </div>
 
     <!-- ============================== PAYMENT =========================== -->
     <div class="pay-wrap" id="payWrap" hidden>
