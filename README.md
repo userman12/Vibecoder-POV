@@ -2,7 +2,7 @@
 
 Un simulatore del vero lavoro moderno: guardare una barra di progresso finché non finiscono i soldi.
 
-**[▶ Prova la demo dal vivo](#)** — *link aggiunto dopo l'attivazione di GitHub Pages*
+**[▶ Prova la demo dal vivo](https://userman12.github.io/Vibecoder-POV/)**
 
 ---
 
