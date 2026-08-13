@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vibe Code POV</title>
+<meta name="description" content="A 2D comic-noir loop about tasks, tokens, waiting and buying more credits." />
+<link rel="stylesheet" href="styles.css" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23080A09'/%3E%3Crect x='5' y='8' width='22' height='13' fill='%2347B99A'/%3E%3Crect x='13' y='21' width='6' height='4' fill='%23123C35'/%3E%3C/svg%3E" />
+</head>
+<body data-state="idle" data-lamp="on" data-credits="ok">
+
+<a class="skip" href="#btnStart">Skip to controls</a>
+
+<main id="app">
+  <div class="stage" id="stage">
+
+    <!-- ============================== SCENA ============================== -->
+    <svg id="scene" viewBox="0 0 1600 1000" role="img"
+         aria-label="A dark room at night. A vibecoder seen from behind, sitting at a desk in front of two glowing monitors.">
+
+      <defs>
+        <!-- Scala tonale per profondità, ora in umbra calda: in Don't Starve la
+             separazione la fa il contorno d'inchiostro, quindi i corpi possono
+             salire di valore. parete < pavimento < sedia < scrivania < oggetti;
+             il personaggio resta la massa più scura, ritagliata nella luce. -->
+        <linearGradient id="gWall" x1="0" y1="0" x2="0.3" y2="1">
+          <stop offset="0" stop-color="#241D18" />
+          <stop offset="0.55" stop-color="#1A1512" />
+          <stop offset="1" stop-color="#131010" />
+        </linearGradient>
+        <linearGradient id="gWallR" x1="0" y1="0" x2="1" y2="0.2">
+          <stop offset="0" stop-color="#1B1512" />
+          <stop offset="1" stop-color="#0D0A08" />
+        </linearGradient>
+        <linearGradient id="gFloor" x1="0.2" y1="0" x2="0.6" y2="1">
+          <stop offset="0" stop-color="#2A2119" />
+          <stop offset="1" stop-color="#150F0C" />
+        </linearGradient>
+        <linearGradient id="gDesk" x1="0.1" y1="0" x2="0.5" y2="1">
+          <stop offset="0" stop-color="#6B5238" />
+          <stop offset="0.5" stop-color="#54402C" />
+          <stop offset="1" stop-color="#3A2C1E" />
+        </linearGradient>
+        <linearGradient id="gSky" x1="0" y1="0" x2="0.2" y2="1">
+          <stop offset="0" stop-color="#0B1F1D" />
+          <stop offset="0.6" stop-color="#123C35" />
+          <stop offset="1" stop-color="#0A1614" />
+        </linearGradient>
+        <linearGradient id="gScreen" x1="0.1" y1="0" x2="0.6" y2="1">
+          <stop offset="0" stop-color="#0F312C" />
+          <stop offset="1" stop-color="#081A17" />
+        </linearGradient>
+        <linearGradient id="gLamp" x1="0" y1="0" x2="0.6" y2="1">
+          <stop offset="0" stop-color="#E8C77A" stop-opacity="0.34" />
+          <stop offset="0.6" stop-color="#E8C77A" stop-opacity="0.09" />
+          <stop offset="1" stop-color="#E8C77A" stop-opacity="0" />
+        </linearGradient>
+        <linearGradient id="gBeam" x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0" stop-color="#47B99A" stop-opacity="0.16" />
+          <stop offset="1" stop-color="#47B99A" stop-opacity="0" />
+        </linearGradient>
+        <radialGradient id="gSpill" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#47B99A" stop-opacity="0.5" />
+          <stop offset="1" stop-color="#47B99A" stop-opacity="0" />
+        </radialGradient>
+
+        <!-- Tratteggio alla Gorey: le ombre non sono campiture piatte ma penna
+             ripassata. Due angoli sovrapposti danno il classico cross-hatch. -->
+        <pattern id="hatch" width="13" height="13" patternUnits="userSpaceOnUse" patternTransform="rotate(38)">
+          <line x1="0" y1="0" x2="0" y2="13" stroke="#0B0907" stroke-width="2.2" stroke-opacity="0.75" />
+          <line x1="6.5" y1="1" x2="6.5" y2="12" stroke="#0B0907" stroke-width="1.1" stroke-opacity="0.4" />
+        </pattern>
+        <pattern id="hatchCross" width="11" height="11" patternUnits="userSpaceOnUse" patternTransform="rotate(-14)">
+          <line x1="0" y1="0" x2="0" y2="11" stroke="#0B0907" stroke-width="2" stroke-opacity="0.6" />
+          <line x1="0" y1="0" x2="11" y2="0" stroke="#0B0907" stroke-width="1.6" stroke-opacity="0.45" />
+        </pattern>
+        <pattern id="hatchTight" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-52)">
+          <line x1="0" y1="0" x2="0" y2="7" stroke="#000" stroke-width="2.6" stroke-opacity="0.65" />
+        </pattern>
+
+        <filter id="rough" x="-4%" y="-4%" width="108%" height="108%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.026" numOctaves="2" seed="9" result="n" />
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="4" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <filter id="roughS" x="-6%" y="-6%" width="112%" height="112%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="3" result="n" />
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="4" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <filter id="grain">
+          <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed="5" />
+          <feColorMatrix type="saturate" values="0" />
+        </filter>
+        <filter id="blurBig" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="34" />
+        </filter>
+        <filter id="blurMid" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="13" />
+        </filter>
+        <filter id="blurSm" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="5" />
+        </filter>
+
+        <clipPath id="clipWindow">
+          <polygon points="86,116 426,110 428,414 84,408" />
+        </clipPath>
+        <clipPath id="clipMug">
+          <polygon points="474,648 540,648 532,704 480,704" />
+        </clipPath>
+      </defs>
+
+      <!-- ---------------------------------------------------------- stanza -->
+      <g id="walls" filter="url(#rough)">
+        <rect x="-10" y="-10" width="1180" height="720" fill="url(#gWall)" />
+        <polygon points="1150,-10 1610,-10 1610,866 1150,702" fill="url(#gWallR)" />
+        <polygon points="-10,698 1150,698 1610,860 1610,1010 -10,1010" fill="url(#gFloor)" />
+      </g>
+
+      <!-- piani d'ombra geometrici sulle pareti -->
+      <g id="wallShades" aria-hidden="true">
+        <polygon class="no-ink" points="0,0 470,0 250,700 0,700" fill="#000" opacity="0.3" />
+        <polygon class="no-ink" points="0,0 430,0 226,700 0,700" fill="url(#hatch)" opacity="0.5" />
+        <polygon class="no-ink" points="880,0 1150,0 1150,700 1010,700" fill="url(#hatchCross)" opacity="0.4" />
+        <polygon class="no-ink" points="1150,0 1600,0 1600,300 1150,210" fill="#000" opacity="0.26" />
+        <polygon class="no-ink" points="1150,120 1600,180 1600,420 1150,330" fill="url(#hatch)" opacity="0.35" />
+        <polygon class="no-ink" points="0,0 300,0 120,700 0,700" fill="url(#hatchTight)" opacity="0.2" />
+        <!-- spigoli architettonici, tirati a inchiostro -->
+        <line x1="1150" y1="0" x2="1150" y2="700" stroke="#0B0907" stroke-width="6" />
+        <line x1="0" y1="700" x2="1150" y2="700" stroke="#0B0907" stroke-width="7" />
+        <line x1="1150" y1="700" x2="1600" y2="860" stroke="#0B0907" stroke-width="7" />
+      </g>
+
+      <!-- --------------------------------------------------------- finestra -->
+      <g id="window" class="hot" tabindex="0" role="button"
+         aria-label="Window with a night skyline. Changes the weather outside.">
+        <polygon data-ink="2" points="66,100 442,92 448,432 62,424" fill="#151110" stroke="#0B0907" stroke-width="3" />
+        <polygon points="86,116 426,110 428,414 84,408" fill="url(#gSky)" />
+        <g clip-path="url(#clipWindow)">
+          <g id="skyline"></g>
+          <g id="cityLights"></g>
+          <g id="rain"></g>
+          <polygon class="no-ink" id="lightning" points="86,110 428,110 428,414 84,408" fill="#D9CDB4" opacity="0" />
+          <polygon points="84,352 430,346 430,416 84,412" fill="#100C0A" opacity="0.72" />
+        </g>
+        <!-- montanti -->
+        <polygon points="248,110 268,110 266,414 246,414" fill="#120F0D" stroke="#0B0907" stroke-width="2" />
+        <polygon points="84,252 428,246 428,266 84,272" fill="#120F0D" stroke="#0B0907" stroke-width="2" />
+        <polygon points="66,100 442,92 448,432 62,424" fill="none" stroke="#0B0907" stroke-width="7" />
+        <rect class="hit" x="60" y="88" width="392" height="350" />
+      </g>
+
+      <!-- fascio di luce dalla finestra -->
+      <polygon class="no-ink" id="windowBeam" points="90,414 424,408 980,1000 210,1000" fill="url(#gBeam)" opacity="0.5" />
+
+      <!-- ----------------------------------------------------------- poster -->
+      <!-- il poster motivazionale d'ordinanza: vetta innevata e slogan da hustle -->
+      <g id="poster" class="hot" tabindex="0" role="button"
+         aria-label="Motivational poster: Rise and grind. Sleep is a config option.">
+        <polygon points="640,32 800,26 806,190 636,186" fill="#191411" stroke="#0B0907" stroke-width="3.5" />
+        <polygon points="652,44 790,39 794,178 648,175" fill="#151110" />
+        <!-- montagna con vetta innevata -->
+        <polygon points="658,126 698,70 720,100 744,62 784,126" fill="#4A5334" />
+        <polygon points="744,62 756,79 731,79" fill="#D9CDB4" opacity="0.6" />
+        <polygon points="698,70 708,84 688,84" fill="#D9CDB4" opacity="0.42" />
+        <polygon points="656,126 786,124 787,133 656,135" fill="#2E251D" />
+        <text class="posterLine posterLine-big" x="721" y="153" text-anchor="middle">RISE &amp; GRIND</text>
+        <text class="posterLine posterLine-small" x="721" y="169" text-anchor="middle">sleep is a config option</text>
+        <rect class="hit" x="634" y="24" width="176" height="170" />
+      </g>
+
+      <!-- ---------------------------------------------------------- scrivania -->
+      <g id="desk">
+        <polygon data-ink="2" points="360,600 1250,600 1330,845 230,845" fill="url(#gDesk)" />
+        <polygon points="230,845 1330,845 1338,910 222,910" fill="#1B1613" />
+        <polygon class="no-ink" points="360,600 1250,600 1330,845 230,845" fill="url(#hatchCross)" opacity="0.22" />
+        <line x1="360" y1="600" x2="1250" y2="600" stroke="#0B0907" stroke-width="3" />
+        <!-- spigolo frontale: la linea più chiara della scena dopo le luci -->
+        <line x1="230" y1="845" x2="1330" y2="845" stroke="#0B0907" stroke-width="5" />
+        <line x1="230" y1="845" x2="222" y2="910" stroke="#0B0907" stroke-width="4" />
+        <line x1="1330" y1="845" x2="1338" y2="910" stroke="#0B0907" stroke-width="4" />
+        <!-- ombra proiettata dai monitor -->
+        <polygon class="no-ink" points="470,600 1120,600 1180,760 430,760" fill="#000" opacity="0.22" />
+        <polygon class="no-ink" points="480,604 1110,604 1168,752 442,752" fill="url(#hatch)" opacity="0.45" />
+        <!-- pozza di luce verde sul piano -->
+        <polygon class="no-ink" id="deskSpill" points="500,600 1120,600 1200,800 420,800" fill="url(#gSpill)" opacity="0.42" />
+      </g>
+
+      <!-- alone dei monitor sulla parete -->
+      <ellipse id="wallGlow" cx="795" cy="360" rx="420" ry="230" fill="#47B99A" opacity="0.09" filter="url(#blurBig)" />
+
+      <!-- ------------------------------------------------- monitor principale -->
+      <g id="monitor-main" class="hot" tabindex="0" role="button"
+         aria-label="Main monitor. Starts a task and shows the agent terminal.">
+        <polygon points="770,494 830,494 840,588 760,588" fill="#2C231C" stroke="#0B0907" stroke-width="2.5" />
+        <polygon points="694,586 906,586 924,608 676,608" fill="#3A2E23" stroke="#0B0907" stroke-width="2.5" />
+        <polygon data-ink="2" points="546,184 1044,184 1040,498 550,498" fill="#28201A" stroke="#0B0907" stroke-width="3.5" />
+        <rect id="screenGlass" x="566" y="206" width="458" height="268" fill="url(#gScreen)" />
+        <polygon points="566,206 1024,206 1024,232 566,232" fill="#0B1F1D" />
+        <line x1="546" y1="184" x2="1044" y2="184" stroke="#47B99A" stroke-width="2" stroke-opacity="0.35" />
+        <rect class="hit" x="546" y="184" width="498" height="316" />
+      </g>
+      <rect id="screenBleed" x="546" y="186" width="498" height="312" fill="#47B99A" opacity="0.2" filter="url(#blurMid)" pointer-events="none" />
+
+      <!-- --------------------------------------------------- secondo monitor -->
+      <g id="monitor-side" class="hot" tabindex="0" role="button"
+         aria-label="Second monitor showing a social feed.">
+        <polygon points="1210,506 1256,510 1250,600 1196,598" fill="#2C231C" stroke="#0B0907" stroke-width="2.5" />
+        <polygon points="1150,596 1310,600 1322,620 1138,616" fill="#3A2E23" stroke="#0B0907" stroke-width="2.5" />
+        <polygon data-ink="2" points="1060,252 1418,222 1418,538 1060,508" fill="#28201A" stroke="#0B0907" stroke-width="3.5" />
+        <polygon class="no-ink" id="sideGlass" points="1078,268 1400,240 1400,520 1078,492" fill="url(#gScreen)" />
+        <rect class="hit" x="1058" y="222" width="362" height="318" />
+      </g>
+      <polygon class="no-ink" id="sideBleed" points="1078,268 1400,240 1400,520 1078,492" fill="#47B99A" opacity="0.14"
+               filter="url(#blurMid)" pointer-events="none" />
+
+      <!-- ----------------------------------------------------------- lampada -->
+      <g id="lamp" class="hot" tabindex="0" role="button" aria-label="Desk lamp. Toggles the warm light.">
+        <polygon class="no-ink" points="284,628 414,628 438,650 300,650" fill="#000" opacity="0.45" />
+        <polygon points="286,606 400,606 412,634 296,634" fill="#221B16" stroke="#0B0907" stroke-width="2.5" />
+        <polygon points="336,610 356,610 372,470 356,468" fill="#221B16" stroke="#0B0907" stroke-width="2" />
+        <polygon points="356,470 372,468 476,428 470,412" fill="#221B16" stroke="#0B0907" stroke-width="2" />
+        <polygon points="452,404 500,420 470,470 430,448" fill="#2E251D" stroke="#0B0907" stroke-width="2.5" />
+        <polygon id="lampBulb" points="440,448 480,462 466,478 434,466" fill="#E8C77A" />
+        <rect class="hit" x="282" y="400" width="228" height="242" />
+      </g>
+      <polygon class="no-ink" id="lampCone" points="452,452 486,466 700,900 300,880" fill="url(#gLamp)" pointer-events="none" />
+
+      <!-- ------------------------------------------------------ oggetti scrivania -->
+      <g id="deskItems">
+
+        <!-- tastiera -->
+        <g id="keyboard" class="hot" tabindex="0" role="button" aria-label="Keyboard. Enter approves the prompt.">
+          <polygon class="no-ink" points="614,746 1024,746 1042,764 598,764" fill="#000" opacity="0.5" />
+          <polygon data-ink="2" points="640,688 992,688 1020,750 610,750" fill="#1C1713" stroke="#0B0907" stroke-width="2.5" />
+          <polygon points="650,696 982,696 1006,742 622,742" fill="#120F0D" />
+          <g class="keys" fill="#46382A" stroke="#0B0907" stroke-width="1.2">
+            <polygon points="656,700 700,700 696,712 650,712" />
+            <polygon points="704,700 748,700 745,712 700,712" />
+            <polygon points="900,700 944,700 946,712 902,712" />
+            <polygon points="656,716 706,716 700,730 648,730" />
+            <polygon points="896,716 946,716 950,730 898,730" />
+            <polygon points="654,734 720,734 714,740 648,740" />
+            <polygon points="880,734 950,734 956,740 884,740" />
+          </g>
+          <polygon class="no-ink" id="enterKey" points="952,698 1000,698 1010,722 958,722" fill="#4A3B2C" stroke="#47B99A" stroke-width="2.5" />
+          <text x="980" y="716" class="keycap" text-anchor="middle">⏎</text>
+          <rect class="hit" x="606" y="684" width="418" height="70" />
+        </g>
+
+        <!-- mouse -->
+        <g id="mouse" class="hot" tabindex="0" role="button" aria-label="Mouse.">
+          <polygon class="no-ink" points="1032,742 1074,748 1082,760 1030,754" fill="#000" opacity="0.5" />
+          <polygon points="1040,702 1078,706 1072,748 1034,742" fill="#221B16" stroke="#0B0907" stroke-width="2.5" />
+          <line x1="1057" y1="704" x2="1054" y2="722" stroke="#0B0907" stroke-width="2" />
+          <rect class="hit" x="1030" y="698" width="56" height="56" />
+        </g>
+
+        <!-- tazza -->
+        <g id="mug" class="hot" tabindex="0" role="button" aria-label="Coffee mug.">
+          <polygon class="no-ink" points="472,700 542,700 568,716 486,716" fill="#000" opacity="0.55" />
+          <polygon points="540,656 566,664 562,690 538,684" fill="none" stroke="#0B0907" stroke-width="6" />
+          <polygon data-ink="2" points="470,644 544,644 536,706 478,706" fill="#261E19" stroke="#0B0907" stroke-width="2.5" />
+          <g clip-path="url(#clipMug)">
+            <rect id="coffee" x="472" y="652" width="72" height="54" fill="#3A2113" opacity="0.95" />
+          </g>
+          <polygon points="468,640 546,640 544,652 470,652" fill="#4E3E2E" stroke="#0B0907" stroke-width="2.5" />
+          <rect class="hit" x="464" y="634" width="106" height="80" />
+        </g>
+
+        <!-- snack -->
+        <!-- sacchetto di patatine: sommità crimpata a zigzag, corpo a cuscino,
+             etichetta ed effetto foil lucido — così si legge da subito come
+             merenda e non come un blocco generico -->
+        <g id="snack" class="hot" tabindex="0" role="button" aria-label="Snack bag.">
+          <polygon class="no-ink" points="466,832 540,826 550,842 460,848" fill="#000" opacity="0.5" />
+          <polygon points="472,838 464,806 468,776 478,760 486,768 494,758 502,766 510,756 518,764 526,754 536,772 542,806 534,838"
+                    fill="#241D18" stroke="#0B0907" stroke-width="2.5" />
+          <!-- etichetta con l'icona della patatina: è lei a far leggere
+               "sacchetto di patatine" invece di "blocco generico" -->
+          <polygon points="482,798 524,793 530,824 488,828" fill="#E8C77A" opacity="0.92" />
+          <polygon points="491,812 495,804 501,809 506,801 512,807 518,803 522,811 519,818 513,814 508,820 503,813 497,819 493,816"
+                    fill="#C98A3E" opacity="0.95" />
+          <g class="no-ink" fill="#5A3A18" opacity="0.55">
+            <circle cx="500" cy="810" r="1.3" />
+            <circle cx="512" cy="812" r="1.1" />
+            <circle cx="506" cy="815" r="1" />
+          </g>
+          <!-- riflesso del foil -->
+          <line class="no-ink" x1="476" y1="772" x2="494" y2="832" stroke="#D9CDB4" stroke-width="2.5" stroke-opacity="0.3" />
+          <!-- briciole sul piano -->
+          <g class="no-ink" fill="#3A2C1E" opacity="0.7">
+            <circle cx="550" cy="844" r="2.4" />
+            <circle cx="558" cy="840" r="1.7" />
+            <circle cx="544" cy="850" r="1.6" />
+          </g>
+          <rect class="hit" x="452" y="748" width="106" height="106" />
+        </g>
+
+        <!-- smartphone -->
+        <!-- corpo rettangolare, schermo davvero acceso: griglia di app minimali
+             disegnate in coordinate locali dentro un <g> ruotato, cosi restano
+             quadrate invece di seguire lo scorcio del corpo esterno -->
+        <g id="phone" class="hot" tabindex="0" role="button" aria-label="Smartphone, screen on. Shows client notifications.">
+          <polygon class="no-ink" points="352,842 420,832 430,846 360,858" fill="#000" opacity="0.5" />
+          <polygon points="346,725 409,716 426,839 363,848" fill="#1C1713" stroke="#0B0907" stroke-width="2.5" />
+          <g transform="translate(386,782) rotate(-8)">
+            <rect id="phoneScreen" x="-26" y="-54" width="52" height="108" rx="4" fill="#16332C" />
+            <rect x="-20" y="-48" width="24" height="3" fill="#3E7268" opacity="0.7" />
+            <rect x="12" y="-48" width="8" height="3" fill="#47B99A" opacity="0.85" />
+            <g class="phone-apps" opacity="0.94">
+              <rect x="-21" y="-37" width="12" height="12" rx="3" fill="#47B99A" />
+              <rect x="-4" y="-37" width="12" height="12" rx="3" fill="#E8C77A" />
+              <rect x="13" y="-37" width="12" height="12" rx="3" fill="#8A7C64" />
+              <rect x="-21" y="-20" width="12" height="12" rx="3" fill="#E23438" />
+              <rect x="-4" y="-20" width="12" height="12" rx="3" fill="#47B99A" opacity="0.75" />
+              <rect x="13" y="-20" width="12" height="12" rx="3" fill="#8A7C64" opacity="0.7" />
+              <rect x="-21" y="-3" width="12" height="12" rx="3" fill="#E8C77A" opacity="0.75" />
+              <rect x="-4" y="-3" width="12" height="12" rx="3" fill="#8A7C64" opacity="0.6" />
+            </g>
+            <rect x="-10" y="45" width="20" height="3" rx="1.5" fill="#D9CDB4" opacity="0.5" />
+          </g>
+          <polygon class="no-ink" id="phoneNotif" points="352,730 402,723 408,738 358,745" fill="#E23438" opacity="0" />
+          <rect class="hit" x="338" y="708" width="94" height="146" />
+        </g>
+
+        <!-- cuffie -->
+        <g id="headphones" class="hot" tabindex="0" role="button" aria-label="Headphones.">
+          <polygon class="no-ink" points="1098,760 1240,764 1250,778 1096,774" fill="#000" opacity="0.5" />
+          <polyline points="1112,742 1118,700 1150,684 1196,686 1224,706 1226,744"
+                    fill="none" stroke="#0B0907" stroke-width="8" stroke-linejoin="miter" />
+          <polygon points="1098,732 1126,730 1130,764 1102,766" fill="#261E19" stroke="#0B0907" stroke-width="2.5" />
+          <polygon points="1212,732 1240,734 1236,768 1208,764" fill="#261E19" stroke="#0B0907" stroke-width="2.5" />
+          <rect class="hit" x="1092" y="678" width="156" height="96" />
+        </g>
+
+        <!-- vape -->
+        <g id="vape" class="hot" tabindex="0" role="button" aria-label="Vape. The character takes a puff.">
+          <polygon class="no-ink" points="1156,818 1252,798 1262,810 1164,830" fill="#000" opacity="0.5" />
+          <polygon points="1150,796 1246,776 1252,802 1156,822" fill="#241D18" stroke="#0B0907" stroke-width="2.5" />
+          <polygon points="1238,777 1252,774 1256,798 1244,801" fill="#4E3E2E" stroke="#0B0907" stroke-width="2" />
+          <polygon class="no-ink" id="vapeLed" points="1152,800 1162,798 1164,812 1154,814" fill="#47B99A" />
+          <rect class="hit" x="1144" y="768" width="120" height="62" />
+        </g>
+
+        <!-- cavi sulla scrivania -->
+        <!-- il cavo che scendeva dal monitor principale è stato tolto: passava
+             a ridosso della testa e sembrava uscire dal viso del personaggio -->
+        <g id="cables" pointer-events="none" fill="none" stroke="#0B0907" stroke-width="6" stroke-linejoin="miter">
+          <polyline points="1224,600 1210,640 1300,672 1340,720 1330,846" />
+          <polyline points="360,634 340,676 250,700 236,844" />
+        </g>
+      </g>
+
+      <!-- ------------------------------------------------------------- pianta -->
+      <g id="plant" class="hot" tabindex="0" role="button" aria-label="Plant in the corner.">
+        <polygon class="no-ink" points="1396,830 1470,830 1486,846 1394,846" fill="#000" opacity="0.5" />
+        <polygon data-ink="2" points="1392,748 1478,748 1462,838 1408,838" fill="#241D18" stroke="#0B0907" stroke-width="2.5" />
+        <polygon points="1388,738 1482,738 1480,752 1390,752" fill="#4E3E2E" stroke="#0B0907" stroke-width="2" />
+        <g fill="#4A5334" stroke="#0B0907" stroke-width="2.5">
+          <polygon points="1430,750 1414,706 1394,668 1370,640 1352,646 1346,662 1358,656 1368,668 1384,694 1404,724 1420,752" />
+          <polygon points="1436,750 1436,690 1444,632 1458,588 1476,598 1470,618 1460,610 1454,646 1448,694 1450,750" />
+          <polygon points="1442,750 1462,708 1490,678 1516,662 1532,672 1524,690 1512,680 1500,690 1482,712 1462,746" />
+          <polygon points="1424,750 1400,724 1372,712 1350,716 1348,732 1364,726 1382,734 1404,748" />
+          <polygon points="1448,750 1472,730 1496,726 1512,734 1504,746 1490,740 1470,748" />
+        </g>
+        <rect class="hit" x="1362" y="640" width="150" height="204" />
+      </g>
+
+      <!-- ------------------------------------------------------ router / ciabatta -->
+      <!-- solo il router: la ciabatta è stata tolta, il segnale wifi è
+           stampato sul pannello frontale accanto alle spie, non sospeso sopra -->
+      <g id="router" class="hot" tabindex="0" role="button" aria-label="Router. Wifi signal, mostly theoretical.">
+        <polygon class="no-ink" points="1414,930 1566,916 1578,930 1420,944" fill="#000" opacity="0.5" />
+        <polygon points="1408,880 1560,868 1568,922 1414,936" fill="#1E1814" stroke="#0B0907" stroke-width="2.5" />
+        <g id="routerLeds">
+          <rect x="1428" y="896" width="16" height="8" fill="#47B99A" />
+          <rect x="1452" y="894" width="16" height="8" fill="#47B99A" />
+          <rect x="1476" y="892" width="16" height="8" fill="#E23438" />
+        </g>
+        <g id="wifiSignal" class="no-ink" fill="none" stroke="#47B99A" stroke-width="3.4" stroke-linecap="round">
+          <circle class="wifi-bar" cx="1536" cy="908" r="3.2" fill="#47B99A" stroke="none" style="animation-delay:0s" />
+          <path class="wifi-bar" d="M 1527,899 Q 1536,891 1545,899" style="animation-delay:.35s" />
+          <path class="wifi-bar" d="M 1520,891 Q 1536,875 1552,891" style="animation-delay:.7s" />
+        </g>
+        <rect class="hit" x="1398" y="858" width="186" height="94" />
+      </g>
+
+      <!-- ------------------------------------------------------------ sedia -->
+      <!-- Sedia da ufficio riconoscibile: poggiatesta staccato dallo schienale
+           (il vuoto tra i due è il segnale di lettura più forte), braccioli a L
+           e base a stella con rotelle, che spuntano ai lati del personaggio.
+           La sedia è disegnata dopo la scrivania perché sta fra noi e il piano. -->
+      <!-- Grigio ardesia in tutta la sedia, deliberatamente lontano dal
+           marrone di scrivania/pavimento: prima usava le stesse umbre del
+           legno intorno e i pezzi si confondevano con gli oggetti sul piano.
+           Tre valori per la profondità (chiaro sui pad, medio su schienale/
+           poggiatesta, scuro su base e montanti) più il nero d'inchiostro. -->
+      <g id="chair" aria-hidden="true">
+        <!-- base a stella: le razze visibili oltre la sagoma del personaggio -->
+        <polygon points="704,948 566,992 530,984 692,930" fill="#23282A" stroke="#0B0907" stroke-width="2.5" />
+        <polygon points="896,948 1034,992 1070,984 908,930" fill="#23282A" stroke="#0B0907" stroke-width="2.5" />
+        <polygon points="762,952 742,1006 706,1006 728,948" fill="#1C2224" stroke="#0B0907" stroke-width="2.5" />
+        <polygon points="838,952 858,1006 894,1006 872,948" fill="#1C2224" stroke="#0B0907" stroke-width="2.5" />
+        <ellipse cx="524" cy="988" rx="17" ry="13" fill="#181D1F" stroke="#0B0907" stroke-width="2.5" />
+        <ellipse cx="1076" cy="988" rx="17" ry="13" fill="#181D1F" stroke="#0B0907" stroke-width="2.5" />
+        <!-- colonna a gas -->
+        <polygon points="772,880 828,880 832,952 768,952" fill="#181D1F" stroke="#0B0907" stroke-width="2.5" />
+        <polygon points="766,876 834,876 836,892 764,892" fill="#33393C" stroke="#0B0907" stroke-width="2.5" />
+
+        <!-- schienale -->
+        <polygon data-ink="2" points="560,1010 582,872 614,834 986,834 1018,872 1040,1010" fill="#2C3234" stroke="#0B0907" stroke-width="3.5" />
+        <polyline points="600,894 1000,894" fill="none" stroke="#0B0907" stroke-width="2.5" opacity="0.75" />
+        <polyline points="592,946 1008,946" fill="none" stroke="#0B0907" stroke-width="2.5" opacity="0.75" />
+
+        <!-- montanti fra schienale e poggiatesta, stesso tono dei braccioli:
+             il vuoto qui è ciò che rende la sagoma leggibile come sedia da
+             ufficio, non un'altra ombra marrone accanto alla scrivania -->
+        <polygon points="654,834 688,834 690,806 656,806" fill="#3E464A" stroke="#0B0907" stroke-width="2.5" />
+        <polygon points="912,834 946,834 944,806 910,806" fill="#3E464A" stroke="#0B0907" stroke-width="2.5" />
+
+        <!-- poggiatesta -->
+        <polygon data-ink="2" points="632,750 968,746 984,806 616,810" fill="#3E464A" stroke="#0B0907" stroke-width="3.5" />
+
+        <!-- braccioli a L: pad orizzontale + montante verticale -->
+        <polygon points="496,866 580,854 586,890 502,904" fill="#3E464A" stroke="#0B0907" stroke-width="2.5" />
+        <polygon points="536,898 570,893 578,950 544,956" fill="#23282A" stroke="#0B0907" stroke-width="2.5" />
+        <polygon points="1020,854 1104,866 1098,904 1014,890" fill="#3E464A" stroke="#0B0907" stroke-width="2.5" />
+        <polygon points="1030,893 1064,898 1056,956 1022,950" fill="#23282A" stroke="#0B0907" stroke-width="2.5" />
+      </g>
+
+      <!-- ------------------------------------------------------- personaggio -->
+      <!-- abbassato di 22 unità per fare posto ai ciuffi senza coprire il terminale -->
+      <g id="character" transform="translate(0,22)">
+        <!-- braccio sinistro -->
+        <g id="arm-l" class="arm">
+          <polygon points="676,732 646,690 618,668 592,690 616,730 656,772" fill="#131010" stroke="#0B0907" stroke-width="3" />
+          <polygon id="hand-l" points="596,676 634,662 646,684 612,700" fill="#241D18" stroke="#0B0907" stroke-width="2.5" />
+        </g>
+        <!-- braccio destro -->
+        <g id="arm-r" class="arm">
+          <polygon points="924,732 954,690 982,668 1008,690 984,730 944,772" fill="#131010" stroke="#0B0907" stroke-width="3" />
+          <polygon id="hand-r" points="964,662 1002,676 986,700 952,684" fill="#241D18" stroke="#0B0907" stroke-width="2.5" />
+        </g>
+
+        <!-- busto / felpa -->
+        <g id="torso">
+          <polygon data-ink="2" points="632,1010 648,880 664,780 686,716 712,676 748,652 800,644 852,652 888,676 914,716 936,780 952,880 968,1010"
+                   fill="#131010" stroke="#0B0907" stroke-width="3.5" />
+          <!-- cappuccio -->
+          <polygon points="726,660 762,636 800,628 838,636 874,660 856,700 800,684 744,700"
+                   fill="#0F0C0A" stroke="#0B0907" stroke-width="3" />
+          <!-- pieghe -->
+          <g stroke="#0B0907" stroke-width="3" fill="none">
+            <polyline points="700,1006 712,880 726,790" />
+            <polyline points="900,1006 888,880 874,790" />
+            <polyline points="800,700 800,780 786,860" />
+          </g>
+          <polygon class="no-ink" points="632,1010 968,1010 952,880 648,880" fill="#000" opacity="0.3" />
+        </g>
+
+        <!-- testa -->
+        <g id="head">
+          <polygon data-ink="2" points="744,648 736,596 742,552 756,524 778,506 800,500 826,506 848,522 860,548 866,596 856,648"
+                   fill="#171310" stroke="#0B0907" stroke-width="3.5" />
+          <!-- capelli spigolosi -->
+          <polygon points="736,592 738,552 750,436 768,538 784,444 800,530 816,430 832,534 848,450 860,544 870,486 872,592 830,582 800,590 764,582"
+                   fill="#0D0A08" stroke="#0B0907" stroke-width="2.5" />
+          <!-- orecchio -->
+          <polygon points="740,596 730,600 730,620 742,622" fill="#171310" stroke="#0B0907" stroke-width="2" />
+          <polygon points="860,596 870,600 870,620 858,622" fill="#171310" stroke="#0B0907" stroke-width="2" />
+        </g>
+
+        <!-- rim light dei monitor: le due polyline sulla sommità della testa
+             sono state tolte (erano lette come una riga verde disegnata sopra
+             i capelli invece che come luce). Resta solo il bordo su spalle
+             e cappuccio, dove il controluce dei monitor è più plausibile. -->
+        <g id="rimlight" pointer-events="none" fill="none" stroke-linejoin="miter">
+          <polyline class="no-ink" points="712,676 748,652 800,644 852,652 888,676" stroke="#47B99A" stroke-width="4" stroke-opacity="0.55" />
+          <polyline class="no-ink" points="686,716 712,676" stroke="#47B99A" stroke-width="3" stroke-opacity="0.3" />
+          <polyline class="no-ink" points="914,716 888,676" stroke="#47B99A" stroke-width="3" stroke-opacity="0.3" />
+        </g>
+        <!-- rimlightWarm è un fratello di #head, non un figlio: la riga che
+             correva lungo il lato della testa restava ferma quando la testa
+             ruotava con la sua animazione (headIdle), leggendosi come un
+             segno fisso invece che come luce sul personaggio. Tolta. -->
+        <g id="rimlightWarm" pointer-events="none" fill="none">
+          <polyline class="no-ink" points="936,780 914,716" stroke="#E8C77A" stroke-width="3" stroke-opacity="0.3" />
+        </g>
+      </g>
+
+      <!-- vapore -->
+      <g id="vapour" pointer-events="none"></g>
+
+      <!-- fasci diagonali e grana -->
+      <polygon class="no-ink" id="beamDiag" points="1100,0 1360,0 640,1000 260,1000" fill="#47B99A" opacity="0.03" pointer-events="none" />
+      <rect id="grainLayer" x="0" y="0" width="1600" height="1000" filter="url(#grain)" opacity="0.09" pointer-events="none" />
+    </svg>
+
+    <!-- ====================== SCHERMO PRINCIPALE (HTML) ==================== -->
+    <div class="screen screen-main" id="screenMain">
+      <div class="scr-top">
+        <span class="scr-brand">TERMINALMIND</span>
+        <span class="scr-slash">//</span>
+        <span class="scr-mode" id="scrMode">idle</span>
+        <span class="scr-credits">
+          <span class="cred-label">CREDITS</span>
+          <span class="cred-track"><i class="cred-fill" id="credFill"></i></span>
+          <span class="cred-num" id="credNum">1000</span>
+        </span>
+      </div>
+
+      <div class="scr-body">
+        <div class="term" id="term" role="log" aria-live="polite" aria-label="Agent terminal output"></div>
+        <div class="term-input">
+          <span class="term-sign">&gt;</span>
+          <span id="termTyped"></span><i class="caret" id="caret"></i>
+        </div>
+      </div>
+
+      <div class="scr-overlay perm" id="permPanel" hidden>
+        <div class="perm-tag">⚠ PERMISSION REQUIRED</div>
+        <p class="perm-title" id="permTitle"></p>
+        <p class="perm-detail" id="permDetail"></p>
+        <div class="perm-actions">
+          <button class="pbtn pbtn-allow" id="btnAllow">Allow <kbd>Enter</kbd></button>
+          <button class="pbtn pbtn-deny" id="btnDeny">Deny <kbd>Esc</kbd></button>
+        </div>
+      </div>
+
+      <div class="scr-overlay dead" id="deadPanel" hidden>
+        <div class="dead-big" data-text="CREDITS DEPLETED">CREDITS DEPLETED</div>
+        <p class="dead-sub">Your productivity subscription has expired.</p>
+      </div>
+    </div>
+
+    <!-- ======================== SECONDO SCHERMO ============================ -->
+    <div class="screen screen-side" id="screenSide">
+      <div class="feed-top"><span>THE FEED</span><span class="feed-live">live</span></div>
+      <div class="feed" id="feed"></div>
+    </div>
+
+    <!-- ================================ HUD =============================== -->
+    <div class="hud" id="hud">
+      <div class="hud-panel">
+        <div class="hud-row">
+          <span class="hud-k">TASK</span>
+          <span class="hud-v" id="hudTask">— no task —</span>
+        </div>
+        <div class="hud-row">
+          <span class="hud-k">AGENT</span>
+          <span class="hud-state" id="hudState">
+            <i class="hud-dot" aria-hidden="true"></i><span id="hudStateText">Idle</span>
+          </span>
+        </div>
+        <div class="hud-flavor" id="hudFlavor">The cursor is blinking at you</div>
+      </div>
+    </div>
+
+    <p class="hint" id="hint" hidden>Press <kbd>Enter</kbd> to allow</p>
+
+    <!-- ============================= CONTROLLI ============================ -->
+    <div class="controls">
+      <button class="btn btn-go" id="btnStart" type="button">Start task</button>
+      <button class="btn btn-buy" id="btnBuy" type="button" hidden>Buy credits</button>
+      <button class="btn btn-ghost" id="btnMute" type="button" aria-pressed="true">
+        <span aria-hidden="true">♪</span> Sound off
+      </button>
+    </div>
+
+    <!-- fumetto / tooltip / flash -->
+    <div class="bubble" id="bubble" role="status" aria-live="polite" hidden><span id="bubbleText"></span></div>
+    <div class="tip" id="tooltip" hidden></div>
+    <div class="flash" id="flash" aria-hidden="true"></div>
+    <div class="vignette" aria-hidden="true"></div>
+
+    <!-- ============================== PAGAMENTO =========================== -->
+    <div class="pay-wrap" id="payWrap" hidden>
+      <div class="pay" role="dialog" aria-modal="true" aria-labelledby="payTitle">
+        <p class="pay-vendor" id="payTitle">TERMINALMIND <span>// billing</span></p>
+        <p class="pay-plan"></p>
+        <p class="pay-price"><span class="pay-cur">€</span><span class="pay-num"></span><span class="pay-cad"></span></p>
+        <ul class="pay-list"></ul>
+        <button class="pay-cta" id="btnPay" type="button"></button>
+        <p class="pay-fine">By continuing you agree to keep going.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="legend">
+    Click the monitor or <b>Start task</b> · <kbd>Enter</kbd> approves · <kbd>Esc</kbd> denies ·
+    click objects on the desk · <kbd>Tab</kbd> to walk the scene
+  </p>
+</main>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
