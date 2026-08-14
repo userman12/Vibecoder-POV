@@ -259,6 +259,13 @@ export const OBJECT_LINES = {
     'Chugged. The heartbeat is now a build step.'
   ],
   window: ['Outside world detected.', 'People out there are asleep. Weak.', 'The city ships nothing tonight either.', 'It has rained since the last sprint.'],
+  /** shown when the window cycles into fog */
+  windowFog: [
+    'The city is gone. Nobody filed a ticket.',
+    'Visibility: zero. Same as the roadmap.',
+    'Fog rolled in. It also has no deadline.',
+    'Out there, nothing. In here, also nothing.'
+  ],
   lamp: ['Ambient lighting: negotiable.', 'Turning darkness on and off.', 'The lamp still works, at least.'],
   phone: ['Client is typing…', 'Do not open it. Open it.', 'Notification received. Boundaries deleted.'],
   poster: ['Move fast, invoice later.', 'Nothing is production-ready.', 'Ship it, then understand it.', 'The plan was a vibe.'],
@@ -268,7 +275,25 @@ export const OBJECT_LINES = {
   snack: ['Dinner: reconsidered.', 'Crumbs in the mechanical keyboard. Again.'],
   mouse: ['Wireless. Batteries: philosophical.'],
   keyboard: ['Keys worn where the anxiety is.'],
-  'monitor-side': ['Doomscrolling is a form of research.']
+  'monitor-side': ['Doomscrolling is a form of research.'],
+  postit: [
+    'Written in a moment of clarity. Illegible now.',
+    '"FIX THIS" — no further context provided.',
+    'A roadmap, if you squint. Do not squint.',
+    'Three bullet points. All of them say "auth".'
+  ],
+  cat: [
+    'The only one here with a healthy sleep schedule.',
+    'Zero commits. Zero regrets.',
+    'Has not been asked to justify its velocity.',
+    'Dreaming of a codebase it will never maintain.',
+    'Do not wake it. It has done nothing wrong.'
+  ],
+  plant2: [
+    'Smaller plant. Same survival strategy: being ignored.',
+    'Bought as a personality. Kept as an obligation.',
+    'Photosynthesis: the only process here that ships daily.'
+  ]
 };
 
 /* ------------------------------------------------------------ HUD labels */
@@ -448,5 +473,8 @@ export const TOOLTIPS = {
   plant: 'Plant — survivor',
   headphones: 'Headphones — noise cancelled',
   snack: 'Snack — dinner, reconsidered',
-  mouse: 'Mouse — barely used'
+  mouse: 'Mouse — barely used',
+  postit: 'Sticky notes — past you, unhelpful',
+  cat: 'Cat — asleep, winning',
+  plant2: 'Small plant — also ignored'
 };

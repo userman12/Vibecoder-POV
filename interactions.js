@@ -284,11 +284,15 @@ export function createAudio({ muted = true, volume = DEFAULT_VOLUME } = {}) {
     },
 
     /** intensifies the rain when there's a storm outside */
-    weather(storm) {
+    weather(kind) {
       if (!ctx || !ambience) return;
-      ambience.gain.linearRampToValueAtTime(storm ? 0.3 : 0.16, ctx.currentTime + 1.2);
-      // traffic thins out in bad weather
-      if (city) city.gain.linearRampToValueAtTime(storm ? 0.055 : 0.1, ctx.currentTime + 1.2);
+      // A named state, not a boolean: the window cycles three ways now, and
+      // 'calm' as a string is truthy — a boolean check would hear calm as a storm.
+      const rain = { storm: 0.3, fog: 0.06, calm: 0.16 }[kind] ?? 0.16;
+      // fog muffles the traffic almost entirely; a storm merely thins it out
+      const traffic = { storm: 0.055, fog: 0.02, calm: 0.1 }[kind] ?? 0.1;
+      ambience.gain.linearRampToValueAtTime(rain, ctx.currentTime + 1.2);
+      if (city) city.gain.linearRampToValueAtTime(traffic, ctx.currentTime + 1.2);
     },
 
     /** the hum rises while the agent is working, fades when the room is dead */
@@ -524,10 +528,15 @@ export function initInteractions({ svg, stage, els, audio, api, say }) {
 
     window: () => {
       gesture(svg.querySelector('#head'), 'look-window', 3000);
-      const storm = stage.ownerDocument.body.dataset.weather !== 'storm';
-      document.body.dataset.weather = storm ? 'storm' : 'calm';
-      audio.weather(storm);
-      if (storm) {
+
+      // calm → storm → fog → calm
+      const order = ['calm', 'storm', 'fog'];
+      const current = document.body.dataset.weather || 'calm';
+      const next = order[(order.indexOf(current) + 1) % order.length];
+      document.body.dataset.weather = next;
+      audio.weather(next);
+
+      if (next === 'storm') {
         const bolt = svg.querySelector('#lightning');
         bolt.animate(
           [{ opacity: 0 }, { opacity: 0.55 }, { opacity: 0 }, { opacity: 0.3 }, { opacity: 0 }],
@@ -535,7 +544,8 @@ export function initInteractions({ svg, stage, els, audio, api, say }) {
         );
         audio.play('thud');
       }
-      say(pick(OBJECT_LINES.window), 250, 300);
+
+      say(pick(OBJECT_LINES[next === 'fog' ? 'windowFog' : 'window']), 250, 300);
     },
 
     lamp: () => {
@@ -562,6 +572,17 @@ export function initInteractions({ svg, stage, els, audio, api, say }) {
       audio.play('buzzRouter');
       say(pick(OBJECT_LINES.router), 1480, 862, 'alert');
     },
+
+    postit: () => { say(pick(OBJECT_LINES.postit), 540, 220, 'warm'); audio.play('click'); },
+
+    cat: () => {
+      // it stirs, it does not wake — the joke only works if it stays asleep
+      gesture(svg.querySelector('#cat-body'), 'cat-stir', 1800);
+      say(pick(OBJECT_LINES.cat), 1270, 880);
+      audio.play('sip'); // a soft, low, breathy sound doubles nicely as a purr
+    },
+
+    plant2: () => { say(pick(OBJECT_LINES.plant2), 140, 760); audio.play('click'); },
 
     plant: () => { say(pick(OBJECT_LINES.plant), 1430, 660); audio.play('click'); },
     headphones: () => { say(pick(OBJECT_LINES.headphones), 1160, 660); audio.play('click'); },

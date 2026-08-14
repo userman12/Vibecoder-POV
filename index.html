@@ -140,6 +140,13 @@
           <g id="cityLights"></g>
           <g id="rain"></g>
           <polygon class="no-ink" id="lightning" points="86,110 428,110 428,414 84,408" fill="#D9CDB4" opacity="0" />
+          <!-- fog: two drifting bands over the skyline, opacity driven by
+               data-weather. Sits above the buildings but below the sill. -->
+          <g id="fog" class="no-ink" opacity="0">
+            <polygon class="fog-band" points="40,300 470,286 470,352 40,364" fill="#69716C" opacity="0.5" />
+            <polygon class="fog-band" points="40,238 470,250 470,300 40,292" fill="#8A7C64" opacity="0.32" />
+            <polygon class="fog-band" points="40,180 470,192 470,236 40,228" fill="#69716C" opacity="0.22" />
+          </g>
           <polygon points="84,352 430,346 430,416 84,412" fill="#100C0A" opacity="0.72" />
         </g>
         <!-- mullions -->
@@ -200,6 +207,24 @@
         <rect class="hit" x="546" y="184" width="498" height="316" />
       </g>
       <rect id="screenBleed" x="546" y="186" width="498" height="312" fill="#47B99A" opacity="0.2" filter="url(#blurMid)" pointer-events="none" />
+
+      <!-- ---------------------------------------------------------- post-its -->
+      <!-- Stuck on the monitor's left bezel, in the gap between the frame and
+           the lamp arm. Drawn after the monitor so they sit on top of it. -->
+      <g id="postit" class="hot" tabindex="0" role="button" aria-label="Sticky notes on the monitor bezel.">
+        <polygon points="498,246 560,240 566,300 504,308" fill="#E8C77A" stroke="#0B0907" stroke-width="2.5" />
+        <g class="no-ink" stroke="#5A3A18" stroke-width="2.5" stroke-opacity="0.55">
+          <line x1="508" y1="262" x2="552" y2="258" />
+          <line x1="508" y1="276" x2="556" y2="272" />
+          <line x1="508" y1="290" x2="536" y2="287" />
+        </g>
+        <polygon points="506,312 566,306 572,360 512,368" fill="#C9B98A" stroke="#0B0907" stroke-width="2.5" />
+        <g class="no-ink" stroke="#5A3A18" stroke-width="2.5" stroke-opacity="0.5">
+          <line x1="516" y1="328" x2="558" y2="324" />
+          <line x1="516" y1="342" x2="548" y2="339" />
+        </g>
+        <rect class="hit" x="492" y="234" width="88" height="142" />
+      </g>
 
       <!-- --------------------------------------------------- second monitor -->
       <g id="monitor-side" class="hot" tabindex="0" role="button"
@@ -383,6 +408,42 @@
           <path class="wifi-bar" d="M 1520,891 Q 1536,875 1552,891" style="animation-delay:.7s" />
         </g>
         <rect class="hit" x="1398" y="858" width="186" height="94" />
+      </g>
+
+      <!-- -------------------------------------------------------------- cat -->
+      <!-- Curled up on the floor to the left of the router, in the only
+           clear patch of floor on that side. The slow scale on #cat-body is
+           breathing: it is the one thing in the room that is fine. -->
+      <g id="cat" class="hot" tabindex="0" role="button" aria-label="A cat asleep on the floor.">
+        <polygon class="no-ink" points="1186,986 1344,986 1356,1000 1176,1000" fill="#000" opacity="0.45" />
+        <g id="cat-body">
+          <polygon data-ink="2" points="1196,982 1200,946 1222,920 1262,908 1306,916 1332,940 1340,970 1330,986 1210,990"
+                   fill="#1A1614" stroke="#0B0907" stroke-width="3" />
+          <!-- tail wrapped around the front -->
+          <polyline points="1334,972 1300,992 1250,998 1212,988" fill="none" stroke="#0B0907" stroke-width="9" stroke-linejoin="miter" />
+          <polyline class="no-ink" points="1334,972 1300,992 1250,998 1212,988" fill="none" stroke="#241D18" stroke-width="4" />
+          <!-- head tucked in, ears -->
+          <polygon points="1200,948 1194,924 1206,910 1228,908 1240,922 1238,946 1220,958" fill="#1E1917" stroke="#0B0907" stroke-width="2.5" />
+          <polygon points="1194,924 1190,900 1210,914" fill="#1E1917" stroke="#0B0907" stroke-width="2.5" />
+          <polygon points="1228,908 1236,888 1244,912" fill="#1E1917" stroke="#0B0907" stroke-width="2.5" />
+          <!-- closed eye: a single content line -->
+          <polyline class="no-ink" points="1206,932 1218,934" fill="none" stroke="#8A7C64" stroke-width="2.5" stroke-opacity="0.7" />
+        </g>
+        <rect class="hit" x="1176" y="884" width="182" height="118" />
+      </g>
+
+      <!-- ------------------------------------------------------ second plant -->
+      <!-- Far-left floor, balancing the plant + router mass on the right. -->
+      <g id="plant2" class="hot" tabindex="0" role="button" aria-label="A small plant on the floor.">
+        <polygon class="no-ink" points="82,962 176,962 190,978 70,978" fill="#000" opacity="0.45" />
+        <polygon data-ink="2" points="92,880 168,880 158,966 102,966" fill="#241D18" stroke="#0B0907" stroke-width="2.5" />
+        <polygon points="86,868 174,868 172,882 88,882" fill="#4E3E2E" stroke="#0B0907" stroke-width="2.5" />
+        <g fill="#4A5334" stroke="#3E7268" stroke-width="2.5">
+          <polygon points="126,870 112,824 92,796 76,802 74,818 88,810 100,830 116,872" />
+          <polygon points="132,870 134,818 146,782 162,790 156,806 148,798 142,824 140,870" />
+          <polygon points="136,870 156,834 182,814 194,824 184,836 176,830 162,846 148,872" />
+        </g>
+        <rect class="hit" x="62" y="776" width="146" height="212" />
       </g>
 
       <!-- ------------------------------------------------------------ chair -->

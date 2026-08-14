@@ -146,6 +146,20 @@ body::before {
   to   { filter: drop-shadow(0 0 16px rgba(232,199,122,.95)) brightness(1.35); }
 }
 
+/* the cat breathes, slowly, indifferent to the credit balance */
+#cat-body { transform-box: fill-box; transform-origin: 50% 100%; animation: catBreathe 5.6s ease-in-out infinite; }
+@keyframes catBreathe {
+  0%, 100% { transform: scale(1, 1); }
+  50%      { transform: scale(1.018, 1.03); }
+}
+/* clicked: it shifts once and settles. It does not wake up. */
+#cat-body.cat-stir { animation: catStir 1.8s ease-in-out; }
+@keyframes catStir {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  25%      { transform: translate(-3px, -2px) rotate(-.8deg); }
+  55%      { transform: translate(2px, 0) rotate(.5deg); }
+}
+
 /* konami payoff: every clickable object lights up in sequence */
 .hot.egg-flash { animation: eggFlash .7s steps(3); }
 @keyframes eggFlash {
@@ -262,21 +276,54 @@ body::before {
 .scr-mode { color: var(--dust); text-transform: uppercase; }
 .scr-credits { margin-left: auto; display: flex; align-items: center; gap: .45em; }
 .cred-label { color: var(--dust); font-size: .84em; }
+/* Credit gauge, not a progress bar.
+   It lives inside the monitor, so it stays in the terminal's green rather
+   than going paper-and-ink like the HUD — but it's built as a drawn
+   instrument: an uneven ink border, hand-spaced tick marks along the top,
+   a segmented fill that empties in notches instead of sliding smoothly,
+   and a needle riding the current level. */
 .cred-track {
-  width: 6.2em; height: .72em;
-  background: #0A2320;
-  box-shadow: inset 0 0 0 1px rgba(71,185,154,.35);
+  position: relative;
+  width: 7.4em; height: 1.15em;
+  background: #071B18;
+  border: 1px solid rgba(71,185,154,.5);
+  box-shadow: inset 0 0 0 1px rgba(8,5,3,.8), 1px 1px 0 rgba(8,5,3,.6);
   display: block;
+  overflow: hidden;
+}
+/* tick marks: taller ones at the quarters, short ones between */
+.cred-track::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: .34em; z-index: 2;
+  background:
+    repeating-linear-gradient(to right,
+      rgba(71,185,154,.55) 0 1px, transparent 1px 25%),
+    repeating-linear-gradient(to right,
+      rgba(71,185,154,.28) 0 1px, transparent 1px 8.333%);
 }
 .cred-fill {
   display: block; height: 100%; width: 100%;
-  background: var(--green);
+  /* notched fill: the segment seams are what make it read as an instrument */
+  background:
+    repeating-linear-gradient(to right,
+      var(--green) 0 calc(8.333% - 1px), rgba(8,5,3,.55) calc(8.333% - 1px) 8.333%);
   transition: width .12s linear, background-color .2s;
+}
+/* the needle sits at the leading edge of the fill */
+.cred-fill::after {
+  content: ""; position: absolute; top: -.12em; right: -1px; width: 2px; height: 1.3em;
+  background: var(--bone);
+  box-shadow: 0 0 4px rgba(217,205,180,.8);
 }
 .cred-num { color: var(--bone); min-width: 3.4em; text-align: right; }
 
-body[data-credits="low"] .cred-fill { background: var(--red); animation: credPulse .5s steps(2) infinite; }
+body[data-credits="low"] .cred-fill {
+  background:
+    repeating-linear-gradient(to right,
+      var(--red) 0 calc(8.333% - 1px), rgba(8,5,3,.55) calc(8.333% - 1px) 8.333%);
+  animation: credPulse .5s steps(2) infinite;
+}
 body[data-credits="empty"] .cred-fill { background: var(--red-shadow); width: 0 !important; }
+body[data-credits="empty"] .cred-fill::after { opacity: 0; }
 @keyframes credPulse { 0%,60% { opacity: 1; } 61%,100% { opacity: .35; } }
 
 /* --- terminal --- */
@@ -839,10 +886,59 @@ body[data-lamp="off"] #lampBulb { fill: var(--charcoal); }
 body[data-lamp="off"] #rimlightWarm { opacity: 0; }
 #lampCone, #lampBulb, #rimlightWarm { transition: opacity .18s steps(2), fill .18s steps(2); }
 
-/* weather through the window */
+/* While the agent works, the lamp is not quite steady. The long cycle with
+   the dips bunched near the end means most of it is calm and the flicker
+   arrives unpredictably rather than on a visible beat. Only while lit and
+   only during agentRunning, so it reads as strain on the room's power
+   rather than as a broken bulb. */
+body[data-state="agentRunning"][data-lamp="on"] #lampCone {
+  animation: lampFlicker 7.3s steps(2) infinite;
+}
+body[data-state="agentRunning"][data-lamp="on"] #lampBulb {
+  animation: lampBulbFlicker 7.3s steps(2) infinite;
+}
+@keyframes lampFlicker {
+  0%, 71%   { opacity: 1; }
+  72%       { opacity: .55; }
+  73%, 84%  { opacity: 1; }
+  85%       { opacity: .38; }
+  86%       { opacity: .92; }
+  87%       { opacity: .6; }
+  88%, 100% { opacity: 1; }
+}
+@keyframes lampBulbFlicker {
+  0%, 71%   { fill: var(--cream); }
+  72%       { fill: #8A6E3A; }
+  73%, 84%  { fill: var(--cream); }
+  85%       { fill: #6E5730; }
+  86%       { fill: var(--cream); }
+  87%       { fill: #8A6E3A; }
+  88%, 100% { fill: var(--cream); }
+}
+
+/* weather through the window — cycles calm → storm → fog on each click */
+#rain, #fog, #skyline, #cityLights { transition: opacity .9s ease; }
+
 body[data-weather="storm"] #rain { opacity: 1; }
 body[data-weather="calm"] #rain { opacity: .3; }
 body[data-weather="storm"] .drop { animation-duration: .42s !important; }
+
+/* fog: the city all but disappears, and what's left of it stops twinkling */
+body[data-weather="fog"] #fog { opacity: 1; }
+body[data-weather="fog"] #rain { opacity: .12; }
+body[data-weather="fog"] #skyline { opacity: .3; }
+body[data-weather="fog"] #cityLights { opacity: .22; }
+body[data-weather="fog"] .citylight { animation: none; }
+body[data-weather="fog"] .drop { animation-duration: 1.4s !important; }
+
+.fog-band { animation: fogDrift linear infinite; }
+.fog-band:nth-child(1) { animation-duration: 34s; }
+.fog-band:nth-child(2) { animation-duration: 47s; animation-direction: reverse; }
+.fog-band:nth-child(3) { animation-duration: 61s; }
+@keyframes fogDrift {
+  from { transform: translateX(-60px); }
+  to   { transform: translateX(60px); }
+}
 
 /* router flicker */
 .stage.glitch #screenBleed, .stage.glitch #sideBleed { animation: deadFlicker .1s steps(2) 6; }
