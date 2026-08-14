@@ -232,7 +232,10 @@ export function createAudio({ muted = true, volume = DEFAULT_VOLUME } = {}) {
     buzzRouter: () => {
       tone({ type: 'sawtooth', freq: 88, to: 74, peak: 0.075, attack: 0.008, release: 0.22, wet: 0.55 });
       tone({ type: 'square', freq: 45, peak: 0.05, attack: 0.01, release: 0.3, delay: 0.03, wet: 0.55 });
-    }
+    },
+    /** dry countdown click while the credits run out — deliberately quiet,
+        it repeats up to twice a second and must not become the loudest thing */
+    tick: () => tone({ type: 'sine', freq: 660, to: 540, peak: 0.028, attack: 0.002, release: 0.055, wet: 0.22 })
   };
 
   function applyLevel(ramp = 0.6) {
@@ -635,6 +638,11 @@ export function initInteractions({ svg, stage, els, audio, api, say }) {
 
   els.vol.addEventListener('input', () => {
     api.setVolume(Number(els.vol.value) / 100);
+  });
+
+  els.btnShare.addEventListener('click', () => {
+    audio.play('click');
+    api.shareLoop();
   });
 
   /* --------------------------------------------------------- easter egg */

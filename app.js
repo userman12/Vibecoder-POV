@@ -8,7 +8,8 @@ import {
   CREDITS, TIMING, TASKS, TASK_LOGS, PERMISSIONS, AGENT_LOGS, LOG_FILES,
   FEED_POSTS, STATE_LABELS, STATUS_FLAVOR, PAYMENT, SKYLINE,
   PHONE_NOTIFICATIONS, NOTIFICATION_TIERS, IDLE_MONOLOGUE,
-  TASK_DONE_LINES, TASK_FAIL_LINES, TASK_FAIL_BUBBLES, FAILURE_CHANCE
+  TASK_DONE_LINES, TASK_FAIL_LINES, TASK_FAIL_BUBBLES, FAILURE_CHANCE,
+  SHARE_TEXTS, SHARE_FEEDBACK
 } from './data.js';
 import { StateMachine, Timers } from './stateMachine.js';
 import { createAudio, createSpeaker, initInteractions, buildWindow, puff } from './interactions.js';
@@ -41,6 +42,7 @@ const els = {
   btnStart: $('#btnStart'),
   btnBuy: $('#btnBuy'),
   btnMute: $('#btnMute'),
+  btnShare: $('#btnShare'),
   btnMuteLabel: $('#btnMuteLabel'),
   sound: $('.sound'),
   vol: $('#vol'),
@@ -373,11 +375,28 @@ const sm = new StateMachine('idle', {
       const duration = 24000 + Math.random() * 10000;
       const started = performance.now();
       app.runEndsAt = started + duration;
+      let lastTickAt = 0;
 
       timers.every(TIMING.agentTickMs, () => {
         const now = performance.now();
         app.credits -= CREDITS.burnPerSecond * (TIMING.agentTickMs / 1000);
         renderCredits();
+
+        // Audible countdown once credits get low: the bar already pulses,
+        // but only while you're looking at it. Tied to agentRunning because
+        // that's the only state where credits are actually draining —
+        // ticking while nothing is being spent would just be noise.
+        const left = app.credits / CREDITS.max;
+        if (left > 0 && left < CREDITS.lowThreshold) {
+          // interval closes from 1s down to ~0.42s as it approaches zero,
+          // so the pulse quickens instead of staying metronomic
+          const urgency = 1 - left / CREDITS.lowThreshold;
+          const gap = 1000 - urgency * 580;
+          if (now - lastTickAt >= gap) {
+            lastTickAt = now;
+            audio.play('tick');
+          }
+        }
 
         const ratio = (now - started) / duration;
         if (app.progressEl) {
@@ -611,6 +630,37 @@ function setVolume(v) {
   savePrefs();
 }
 
+/* -------------------------------------------------------------------- share */
+
+/**
+ * Opens a pre-filled post. Runs inside the click handler so the popup
+ * blocker treats it as user-initiated; if it's blocked anyway (window.open
+ * returns null, or returns a window that never gets focus) we fall back to
+ * the clipboard rather than silently doing nothing.
+ */
+function shareLoop() {
+  const text = pick(SHARE_TEXTS);
+  const url = window.location.href.split('#')[0];
+  const intent = 'https://twitter.com/intent/tweet?text=' +
+    encodeURIComponent(text) + '&url=' + encodeURIComponent(url);
+
+  let win = null;
+  try {
+    win = window.open(intent, '_blank', 'noopener,noreferrer,width=600,height=520');
+  } catch { /* handled below */ }
+
+  if (win) {
+    say(SHARE_FEEDBACK.opened, 800, 430, 'warm');
+    return;
+  }
+
+  const clip = window.navigator?.clipboard;
+  if (!clip) { say(SHARE_FEEDBACK.failed, 800, 430, 'alert'); return; }
+  clip.writeText(`${text}\n\n${url}`)
+    .then(() => say(SHARE_FEEDBACK.copied, 800, 430, 'warm'))
+    .catch(() => say(SHARE_FEEDBACK.failed, 800, 430, 'alert'));
+}
+
 /* --------------------------------------------------------------------- intro */
 
 let entered = false;
@@ -717,6 +767,7 @@ const api = {
 
   syncSound,
   setVolume,
+  shareLoop,
 
   scrollFeed
 };

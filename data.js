@@ -404,6 +404,25 @@ export const PAYMENT = {
   ]
 };
 
+/* ----------------------------------------------------------------- sharing */
+
+/**
+ * Pre-filled posts for the share button. Kept well under the 280-char
+ * limit so the URL still fits after the intent encoding appends it.
+ */
+export const SHARE_TEXTS = [
+  'Built a 2D game that simulates my actual job: open task → sign a permission I didn\'t read → watch a progress bar → run out of credits → buy more credits → repeat.\n\nIt\'s satire. Unless you recognise yourself too well.',
+  'Day 47 of building in public: shipped a game where you watch a bar fill, run out of credits, buy more credits, and watch the bar fill again.\n\nNo users. No roadmap. Just the loop.',
+  'Replaced my engineering process with a hand-drawn 2D loop: task → permission → agent → credits: 0 → stare at wall → buy credits → repeat.\n\nFinally, a tech demo that\'s honest about the tech.'
+];
+
+/** shown after the share intent opens, or if it gets blocked */
+export const SHARE_FEEDBACK = {
+  opened: 'Go on. Tell them about the loop.',
+  copied: 'Popup blocked. Copied it to your clipboard instead.',
+  failed: 'Even sharing requires permission now.'
+};
+
 /* ------------------------------------------------------------ night skyline */
 
 /** window buildings: [x, y, w, h] in viewBox coordinates */
