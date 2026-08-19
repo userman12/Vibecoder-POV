@@ -6,13 +6,13 @@
 
 import {
   CREDITS, TIMING, TASKS, TASK_LOGS, PERMISSIONS, AGENT_LOGS, LOG_FILES,
-  FEED_POSTS, STATE_LABELS, STATUS_FLAVOR, PAYMENT, SKYLINE,
+  FEED_POSTS, STATE_LABELS, STATUS_FLAVOR, PAYMENT, SKYLINE, BOSS_SHEET,
   PHONE_NOTIFICATIONS, NOTIFICATION_TIERS, IDLE_MONOLOGUE,
   TASK_DONE_LINES, TASK_FAIL_LINES, TASK_FAIL_BUBBLES, FAILURE_CHANCE,
   SHARE_TEXTS, SHARE_FEEDBACK
 } from './data.js';
 import { StateMachine, Timers } from './stateMachine.js';
-import { createAudio, createSpeaker, initInteractions, buildWindow, puff } from './interactions.js';
+import { createAudio, createSpeaker, initInteractions, buildWindow, buildBossSheet, puff } from './interactions.js';
 import { roughenScene } from './roughen.js';
 
 /* ----------------------------------------------------------------- helpers */
@@ -38,6 +38,7 @@ const els = {
   hudTask: $('#hudTask'),
   hudStateText: $('#hudStateText'),
   hudFlavor: $('#hudFlavor'),
+  hudStats: $('#hudStats'),
   hint: $('#hint'),
   btnStart: $('#btnStart'),
   btnBuy: $('#btnBuy'),
@@ -47,6 +48,7 @@ const els = {
   sound: $('.sound'),
   vol: $('#vol'),
   intro: $('#intro'),
+  bossKey: $('#bossKey'),
   btnEnter: $('#btnEnter'),
   btnAllow: $('#btnAllow'),
   btnDeny: $('#btnDeny'),
@@ -71,13 +73,17 @@ const timers = new Timers();
  */
 const STATS_KEY = 'vibecoderpov:stats';
 
+const STATS_DEFAULT = { totalTasksStarted: 0, sessionsSurvived: 0, creditsBurned: 0, timesPaid: 0 };
+
 function loadStats() {
   try {
     const raw = localStorage.getItem(STATS_KEY);
     const parsed = raw ? JSON.parse(raw) : {};
-    return { totalTasksStarted: Number(parsed.totalTasksStarted) || 0 };
+    const out = {};
+    for (const key in STATS_DEFAULT) out[key] = Number(parsed[key]) || STATS_DEFAULT[key];
+    return out;
   } catch {
-    return { totalTasksStarted: 0 };
+    return { ...STATS_DEFAULT };
   }
 }
 
@@ -254,6 +260,20 @@ function setButtons(state) {
   els.hint.hidden = state !== 'permissionPrompt';
 }
 
+/**
+ * Only visible in idle (see the `body[data-state="idle"]` rule in
+ * styles.css) — a quiet ledger of what the loop has cost across every
+ * session, not just this one. Called at boot and on every return to idle,
+ * since those are the only two moments the numbers can have changed.
+ */
+function renderStats() {
+  if (!els.hudStats) return;
+  els.hudStats.textContent =
+    `Sessions survived: ${stats.sessionsSurvived} · ` +
+    `Credits burned: ${Math.round(stats.creditsBurned).toLocaleString()} · ` +
+    `Times paid: ${stats.timesPaid}`;
+}
+
 /* ----------------------------------------------------------------- effects */
 
 function flash(warm = false) {
@@ -302,6 +322,7 @@ const sm = new StateMachine('idle', {
       app.task = null;
       setHud('idle');
       setButtons('idle');
+      renderStats();
       scheduleIdleMonologue();
     },
     onExit() {
@@ -379,7 +400,13 @@ const sm = new StateMachine('idle', {
 
       timers.every(TIMING.agentTickMs, () => {
         const now = performance.now();
-        app.credits -= CREDITS.burnPerSecond * (TIMING.agentTickMs / 1000);
+        const burn = CREDITS.burnPerSecond * (TIMING.agentTickMs / 1000);
+        app.credits -= burn;
+        // accumulated in memory on every tick, persisted once on onExit
+        // below rather than on every 100ms tick — same tradeoff already
+        // made for purchaseCount: robust against a normal run ending,
+        // not against a hard tab-close mid-run.
+        stats.creditsBurned += burn;
         renderCredits();
 
         // Audible countdown once credits get low: the bar already pulses,
@@ -437,6 +464,7 @@ const sm = new StateMachine('idle', {
     onExit() {
       timers.clear();
       app.progressEl = null;
+      saveStats(); // persist the creditsBurned accumulated this run
     }
   },
 
@@ -497,6 +525,8 @@ const sm = new StateMachine('idle', {
     onEnter() {
       closePayment();
       app.purchaseCount++; // next time the payment screen opens, the plan escalates
+      stats.timesPaid++;
+      saveStats();
       app.credits = CREDITS.refill;
       renderCredits();
       setHud('restart');
@@ -784,11 +814,15 @@ const interactionsApi = initInteractions({
 });
 
 function boot() {
+  stats.sessionsSurvived++;
+  saveStats();
+
   document.body.dataset.weather = 'calm';
   document.body.dataset.lamp = 'on';
   // first thing: turn the crisp polygons into hand-drawn strokes
   roughenScene(els.svg, { amp: 2.6, seg: 24 });
   buildWindow(els.svg, SKYLINE);
+  buildBossSheet(els.bossKey, BOSS_SHEET);
   scrollFeed(); // the feed starts with a single post and grows
   renderCredits();
 
@@ -802,6 +836,7 @@ function boot() {
   addLine('<span class="t-dim">idle. The cursor is blinking at you.</span>');
   setHud('idle');
   setButtons('idle');
+  renderStats();
 
   // reflect the persisted audio preferences on the controls. The sound
   // itself can't start yet (no user gesture); enterScene() does that.

@@ -615,6 +615,7 @@
           </span>
         </div>
         <div class="hud-flavor" id="hudFlavor">The cursor is blinking at you</div>
+        <p class="hud-stats" id="hudStats"></p>
       </div>
     </div>
 
@@ -656,6 +657,29 @@
         <button class="intro-cta" id="btnEnter" type="button">Enter the room</button>
         <p class="intro-fine">Sound is part of it. Headphones recommended.</p>
       </div>
+    </div>
+
+    <!-- ============================== BOSS KEY =========================== -->
+    <!-- Hold B: instant cover story. Deliberately the opposite of the room's
+         hand-inked look — plain, bright, generic corporate chrome — because
+         the joke is entirely in that contrast. Grid content is built once
+         from BOSS_SHEET in data.js; see buildBossSheet() in interactions.js. -->
+    <div class="boss" id="bossKey" hidden aria-live="polite"
+         aria-label="Boss key active. Fake spreadsheet showing. Release B to return.">
+      <div class="boss-bar">
+        <span class="boss-menu">File</span><span class="boss-menu">Edit</span>
+        <span class="boss-menu">View</span><span class="boss-menu">Insert</span>
+        <span class="boss-menu">Format</span><span class="boss-menu">Data</span>
+        <span class="boss-menu">Tools</span><span class="boss-menu">Help</span>
+        <span class="boss-title"></span>
+      </div>
+      <div class="boss-formula" aria-hidden="true">
+        <span class="boss-cellref"></span>
+        <span class="boss-fx">fx</span>
+        <span class="boss-formulaval"></span>
+      </div>
+      <div class="boss-grid" aria-hidden="true"></div>
+      <p class="boss-hint">Release <kbd>B</kbd> to go back</p>
     </div>
 
     <!-- ============================== PAYMENT =========================== -->

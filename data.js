@@ -448,6 +448,32 @@ export const SHARE_FEEDBACK = {
   failed: 'Even sharing requires permission now.'
 };
 
+/* --------------------------------------------------------------- boss key */
+
+/**
+ * Content for the fake spreadsheet shown while the boss key (hold `B`) is
+ * held. Deliberately boring and corporate — the joke is entirely in the
+ * contrast with the room, so the content just needs to look plausible.
+ * `rows` are [label, Q1, Q2, Q3, Q4]; `warnCells` are [rowIndex, colIndex]
+ * pairs (0-indexed into `rows`) rendered like a spreadsheet's conditional
+ * red-flag formatting.
+ */
+export const BOSS_SHEET = {
+  title: 'Q3_Budget_Forecast_FINAL_v2 (3).xlsx',
+  cell: 'C6',
+  formula: '=IF(B6<6,"panic","fine")',
+  columns: ['', 'Q1', 'Q2', 'Q3', 'Q4'],
+  rows: [
+    ['Revenue', '412', '388', '441', 'TBD'],
+    ['Costs', '190', '201', '215', '—'],
+    ['Margin', '54%', '48%', '51%', '#REF!'],
+    ['Headcount', '12', '12', '14', '19'],
+    ['Runway (mo)', '18', '14', '9', '4'],
+    ['Confidence', 'High', 'High', 'Medium', '???']
+  ],
+  warnCells: [[0, 4], [2, 4], [4, 4], [5, 4]]
+};
+
 /* ------------------------------------------------------------ night skyline */
 
 /** window buildings: [x, y, w, h] in viewBox coordinates */

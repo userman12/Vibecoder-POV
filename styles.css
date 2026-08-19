@@ -448,6 +448,14 @@ body[data-credits="empty"] .cred-fill::after { opacity: 0; }
   margin-top: .5em; font-size: .8cqw; color: var(--dust); font-style: italic; letter-spacing: .02em;
   max-width: 24cqw; line-height: 1.35;
 }
+/* A quiet ledger, idle-only: it's a record of what the loop has cost, so it
+   only makes sense to read it in the gap between runs, not mid-panic. */
+.hud-stats {
+  display: none;
+  margin: .5em 0 0; font-size: .68cqw; color: var(--dust); opacity: .75;
+  letter-spacing: .04em; font-family: var(--mono); max-width: 24cqw;
+}
+body[data-state="idle"] .hud-stats { display: block; }
 
 body[data-state="agentRunning"] .hud-dot { animation: blink .7s steps(1) infinite; }
 body[data-state="permissionPrompt"] .hud-state,
@@ -550,6 +558,61 @@ body[data-state="payment"] .hud-panel { border-left-color: var(--cream); }
   box-shadow: 2px 2px 0 rgba(8,5,3,.6);
 }
 .vol:focus-visible { outline: 2px solid var(--cream); outline-offset: 4px; }
+
+/* ---------------------------------------------------------------- boss key */
+
+/* Deliberately generic and bright — Arial, thin gray rules, no ink, no
+   texture. It has to read as a completely different, boring product at a
+   glance, because the joke IS the contrast with the room. z-index above the
+   intro (10) so it can be triggered any time after entering, including, in
+   principle, over the payment screen. */
+.boss {
+  position: absolute; inset: 0; z-index: 11;
+  display: flex; flex-direction: column;
+  background: #F4F5F7; color: #1B1F23;
+  font-family: Arial, Helvetica, sans-serif;
+  animation: bossIn .1s steps(2);
+}
+@keyframes bossIn { from { opacity: 0; } }
+
+.boss-bar {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 1.2em;
+  padding: .5em 1em; background: #FFFFFF; border-bottom: 1px solid #D6D9DC;
+  font-size: .8cqw;
+}
+.boss-menu { color: #444; }
+.boss-title { margin-left: auto; color: #6B7076; font-style: italic; }
+
+.boss-formula {
+  flex: 0 0 auto; display: flex; align-items: center; gap: .8em;
+  padding: .4em 1em; background: #FBFBFC; border-bottom: 1px solid #E2E4E7;
+  font-family: ui-monospace, Menlo, monospace; font-size: .78cqw;
+}
+.boss-cellref { padding: .1em .6em; background: #FFF; border: 1px solid #C7CBCF; color: #333; }
+.boss-fx { color: #8A8F94; font-style: italic; }
+.boss-formulaval { color: #1B1F23; }
+
+.boss-grid {
+  flex: 1 1 auto; display: grid;
+  grid-template-columns: 6em repeat(4, 1fr);
+  border-top: 1px solid #E2E4E7;
+  font-size: .84cqw;
+  overflow: hidden;
+}
+.boss-cell {
+  padding: .55em .7em; border-right: 1px solid #E7E9EB; border-bottom: 1px solid #E7E9EB;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.boss-cell.head { background: #F1F3F5; font-weight: 700; color: #444; }
+.boss-cell.label { background: #FAFBFC; font-weight: 600; color: #333; }
+.boss-cell.warn { color: #C0392B; font-weight: 700; }
+
+.boss-hint {
+  flex: 0 0 auto; margin: 0; padding: .5em 1em;
+  font-size: .74cqw; color: #9AA0A6; text-align: right;
+  background: #FFFFFF; border-top: 1px solid #E2E4E7;
+}
+.boss-hint kbd { font-family: ui-monospace, monospace; border: 1px solid #C7CBCF; padding: 0 .4em; }
 
 /* ------------------------------------------------------------------- intro */
 

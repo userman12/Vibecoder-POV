@@ -440,6 +440,30 @@ export function buildWindow(svg, skyline) {
   }
 }
 
+/** builds the fake spreadsheet grid once, from BOSS_SHEET in data.js */
+export function buildBossSheet(root, sheet) {
+  root.querySelector('.boss-title').textContent = sheet.title;
+  root.querySelector('.boss-cellref').textContent = sheet.cell;
+  root.querySelector('.boss-formulaval').textContent = sheet.formula;
+
+  const grid = root.querySelector('.boss-grid');
+  sheet.columns.forEach((label) => {
+    const cell = document.createElement('div');
+    cell.className = 'boss-cell head';
+    cell.textContent = label;
+    grid.appendChild(cell);
+  });
+  sheet.rows.forEach((row, r) => {
+    row.forEach((val, c) => {
+      const cell = document.createElement('div');
+      const warn = sheet.warnCells.some(([wr, wc]) => wr === r && wc === c);
+      cell.className = 'boss-cell' + (c === 0 ? ' label' : '') + (warn ? ' warn' : '');
+      cell.textContent = val;
+      grid.appendChild(cell);
+    });
+  });
+}
+
 /* =========================================================================
    Wiring up all interactions
    ========================================================================= */
@@ -703,6 +727,16 @@ export function initInteractions({ svg, stage, els, audio, api, say }) {
     say('Nice. Now get back to work.', 800, 430, 'warm');
   }
 
+  /* ----------------------------------------------------------- boss key */
+
+  function showBossKey() {
+    if (!els.bossKey.hidden) return; // ignore OS key-repeat while held
+    els.bossKey.hidden = false;
+  }
+  function hideBossKey() {
+    els.bossKey.hidden = true;
+  }
+
   /* ----------------------------------------------------------- keyboard */
 
   document.addEventListener('keydown', (ev) => {
@@ -711,7 +745,9 @@ export function initInteractions({ svg, stage, els, audio, api, say }) {
     if (typingInField) return;
 
     // the sequence is checked first, and swallows its own keys so that the
-    // trailing "a"/"b" and the arrows don't also reach the handlers below
+    // trailing "a"/"b" and the arrows don't also reach the handlers below.
+    // This also means completing Konami on its own trailing "b" can never
+    // also trigger the boss key in the same keystroke — they stay separate.
     if (konami(ev.key)) {
       ev.preventDefault();
       return;
@@ -727,7 +763,15 @@ export function initInteractions({ svg, stage, els, audio, api, say }) {
       api.secondaryAction();
     } else if (ev.key.toLowerCase() === 'm') {
       els.btnMute.click();
+    } else if (ev.key.toLowerCase() === 'b') {
+      showBossKey();
     }
+  });
+
+  // held, not toggled: the cover story should vanish the instant the key
+  // is let go, same as a real panic button
+  document.addEventListener('keyup', (ev) => {
+    if (ev.key.toLowerCase() === 'b') hideBossKey();
   });
 
   // empty click on the room: small feedback, nothing more
